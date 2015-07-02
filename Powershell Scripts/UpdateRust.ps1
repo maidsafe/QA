@@ -2,8 +2,10 @@ Function Install ($channel) {
     # Download sha256 of msi to check whether installed version is still up to date.
     $msi_name = "rust-$channel-x86_64-pc-windows-gnu.msi"
     $msi = $env:TEMP + "\" + $msi_name
+    [io.file]::WriteAllBytes("$msi.sha256",(Invoke-WebRequest -URI "http://static.rust-lang.org/dist/rust-$channel-x86_64-pc-windows-gnu.msi.sha256" -Headers @{"Accept-Encoding"="gzip, deflate"}).content)
+
     $client = New-Object System.Net.WebClient
-    $client.DownloadFile("http://static.rust-lang.org/dist/rust-$channel-x86_64-pc-windows-gnu.msi.sha256", "$msi.sha256")
+#    $client.DownloadFile("http://static.rust-lang.org/dist/rust-$channel-x86_64-pc-windows-gnu.msi.sha256", "$msi.sha256")
 
     # Check for existing installed version
     $existing_path = ([Environment]::GetEnvironmentVariable("RUST_" + $channel.ToUpper(), "Machine")) | Out-String
@@ -21,6 +23,7 @@ Function Install ($channel) {
         Select-String -Pattern $sha256 -Path "$msi.sha256" -SimpleMatch -Quiet -OutVariable hash_check >$null
         Select-String -Pattern $msi_name -Path "$msi.sha256" -CaseSensitive -SimpleMatch -Quiet -OutVariable name_check >$null
         If ($hash_check -and $name_check) {
+            Remove-Item "$msi.sha256" -ErrorAction SilentlyContinue
             $foreground_colour = (Get-Host).UI.RawUI.ForegroundColor.ToString()
             (Get-Host).UI.RawUI.ForegroundColor = "green"
             "Currently installed $existing_version is up to date"
