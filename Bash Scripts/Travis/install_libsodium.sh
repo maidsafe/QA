@@ -5,4 +5,4 @@ cd libsodium-1.0.3
 ./configure --prefix=/usr --enable-shared=no
 CORES=$(nproc)
 make check -j$CORES
-make install
+sudo make install
