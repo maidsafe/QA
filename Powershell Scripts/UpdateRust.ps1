@@ -2,6 +2,7 @@ Function Install ($channel) {
     # Download sha256 of msi to check whether installed version is still up to date.
     $msi_name = "rust-$channel-x86_64-pc-windows-gnu.msi"
     $msi = $env:TEMP + "\" + $msi_name
+    Remove-Item "$msi.sha256" -ErrorAction SilentlyContinue
     [io.file]::WriteAllBytes("$msi.sha256",(Invoke-WebRequest -URI "http://static.rust-lang.org/dist/rust-$channel-x86_64-pc-windows-gnu.msi.sha256" -Headers @{"Accept-Encoding"="gzip, deflate"}).content)
 
     $client = New-Object System.Net.WebClient
