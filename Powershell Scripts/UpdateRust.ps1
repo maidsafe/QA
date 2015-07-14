@@ -19,7 +19,7 @@ Function Install ($channel) {
 
         # Check current msi against fresh sha256
         $old_msi = $existing_path + "\" + $msi_name
-        $sha256 = (Get-FileHash $old_msi -Algorithm SHA256 | Format-Wide -Property Hash) | Out-String
+        $sha256 = (Get-FileHash $old_msi -Algorithm SHA256 | Format-Wide -Property Hash -AutoSize) | Out-String
         $sha256 = $sha256.Trim()
         Select-String -Pattern $sha256 -Path "$msi.sha256" -SimpleMatch -Quiet -OutVariable hash_check >$null
         Select-String -Pattern $msi_name -Path "$msi.sha256" -CaseSensitive -SimpleMatch -Quiet -OutVariable name_check >$null
@@ -71,7 +71,7 @@ Function Install ($channel) {
     $client.DownloadFile("http://static.rust-lang.org/dist/rust-$channel-x86_64-pc-windows-gnu.msi", "$msi")
 
     "Validating $msi_name"
-    $sha256 = (Get-FileHash $msi -Algorithm SHA256 | Format-Wide -Property Hash) | Out-String
+    $sha256 = (Get-FileHash $msi -Algorithm SHA256 | Format-Wide -Property Hash -AutoSize) | Out-String
     $sha256 = $sha256.Trim()
     Select-String -Pattern $sha256 -Path "$msi.sha256" -SimpleMatch -Quiet -OutVariable hash_check >$null
     Select-String -Pattern $msi_name -Path "$msi.sha256" -CaseSensitive -SimpleMatch -Quiet -OutVariable name_check >$null
