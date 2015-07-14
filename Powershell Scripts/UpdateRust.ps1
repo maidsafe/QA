@@ -126,6 +126,8 @@ Function Install ($channel) {
     (Get-Host).UI.RawUI.ForegroundColor = $foreground_colour
 }
 
+$logfile = $env:TEMP + "\RustUpdate.log"
+Start-Transcript -Path $logfile -Append
 
 If (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     $foreground_colour = (Get-Host).UI.RawUI.ForegroundColor.ToString()
