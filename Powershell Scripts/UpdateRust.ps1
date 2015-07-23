@@ -112,8 +112,11 @@ Function Install ($channel) {
     Move-Item "$msi" "$install_dir" -Force
     Remove-Item "$msi.sha256" -ErrorAction SilentlyContinue
 
-    # Set environment variable for batch script to use when launching Rust console
+    # Set environment variable for batch script to use when launching Rust console, and for Jenkins to use
     [Environment]::SetEnvironmentVariable("RUST_" + $channel.ToUpper(), "$install_dir", "Machine")
+
+    # Restart Jenkins slave service (ignore error since it may not exist)
+    Restart-Service jenkinsslave-C__J -ErrorAction SilentlyContinue
 
     # Get newly-installed version and display result
     $env:Path = "$install_dir\bin;$env:Path"
