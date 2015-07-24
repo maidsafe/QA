@@ -1,6 +1,6 @@
 # Install libsodium
 
-Download and unpack a tarball of [libsodium](https://download.libsodium.org/libsodium/releases/)
+Download, unpack the tarball of [libsodium](https://download.libsodium.org/libsodium/releases/) and install.
 
 For v1.0.0 this would be :
 ```
