@@ -7,6 +7,7 @@ For v1.0.0 this would be :
 tar xvfz libsodium-1.0.0.tar.gz
 cd libsodium-1.0.0 && ./configure --prefix=/usr && make && sudo make install && cd ..
 ```
+### Additional OS X only steps
 
 Set environment variable `LIBRARY_PATH` to where `libsodium.a` resides :
 
