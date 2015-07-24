@@ -11,7 +11,7 @@ cd libsodium-1.0.0 && ./configure --prefix=/usr && make && sudo make install && 
 
 Set environment variable `LIBRARY_PATH` to where `libsodium.a` resides :
 
-One way to do this is from a terminal in your home directory update your .profile file.
+One way to do this is from a terminal, in your home directory update your .profile file.
 
 If it does not exist you may need to create it you can do this by :
 ```
