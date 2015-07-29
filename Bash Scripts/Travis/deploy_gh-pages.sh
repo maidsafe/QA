@@ -1,9 +1,9 @@
 #!/bin/bash
   if  [[ $TRAVIS_OS_NAME = linux ]] && [[ $TRAVIS_RUST_VERSION = nightly ]] && [[ $TRAVIS_BRANCH = master ]] && [[ $TRAVIS_PULL_REQUEST = false ]]; then
-    PROJECT_NAME=echo $TRAVIS_REPO_SLUG | cut -d '/' -f 2;
+    PROJECT_NAME=echo ${TRAVIS_REPO_SLUG} | cut -d '/' -f 2;
     echo $PROJECT_NAME;
     cargo doc &&
-    echo "<meta http-equiv=refresh content=0;url=`$PROJECT_NAME`/index.html>" > target/doc/index.html &&
+    echo "<meta http-equiv=refresh content=0;url=${PROJECT_NAME}/index.html>" > target/doc/index.html &&
     pip install --user ghp-import &&
     mkdir docs-stage &&
     COMMIT_MSG=$(git log -1 | tr '[:upper:]' '[:lower:]' | grep "version change to " | tr -d ' ') &&
@@ -15,7 +15,7 @@
     OLD_FILE=$(ls | grep "main.js");
     if [[ $OLD_FILE == main* ]]; then
       rm -rf * &&
-      echo "<meta http-equiv=refresh content=0;url=master/`echo $TRAVIS_REPO_SLUG | cut -d '/' -f 2`/index.html>" > index.html;
+      echo "<meta http-equiv=refresh content=0;url=master/${PROJECT_NAME}/index.html>" > index.html;
     fi
     if [[ $COMMIT_MSG == versionchangeto* ]];  then
       VERSION=${COMMIT_MSG##*to} &&
