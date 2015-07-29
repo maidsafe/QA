@@ -5,9 +5,4 @@ cd libsodium-1.0.0
 ./configure --prefix=$HOME/libsodium-1.0.0
 make check
 make install
-ln -s libsodium.so.13.2.0 libsodium.so.13
-ln -s libsodium.so.13.2.0 libsodium.so
-export LIBRARY_PATH=$LIBRARY_PATH:$HOME/libsodium-1.0.0/lib
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/libsodium-1.0.0/lib
-export LD_RUN_PATH=$LD_RUN_PATH:$HOME/libsodium-1.0.0/lib
 cd ..
