@@ -1,6 +1,6 @@
 #!/bin/bash
   if  [[ $TRAVIS_OS_NAME = linux ]] && [[ $TRAVIS_RUST_VERSION = nightly ]] && [[ $TRAVIS_BRANCH = master ]] && [[ $TRAVIS_PULL_REQUEST = false ]]; then
-    PROJECT_NAME=echo ${TRAVIS_REPO_SLUG} | cut -d '/' -f 2;
+    PROJECT_NAME=echo "$TRAVIS_REPO_SLUG" | cut -d '/' -f 2;
     echo $PROJECT_NAME;
     cargo doc &&
     echo "<meta http-equiv=refresh content=0;url=${PROJECT_NAME}/index.html>" > target/doc/index.html &&
