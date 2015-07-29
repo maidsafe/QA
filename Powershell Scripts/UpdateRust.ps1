@@ -41,7 +41,7 @@ Function Install ($channel) {
 
         # Wait-Job and Receive-Job aren't reliable for waiting for the uninstall to complete nor to find the result of the
         # uninstall.  We can work around this by waiting for the uninstall log to get generated and then read its contents.
-        $timeout = New-TimeSpan -Seconds 60
+        $timeout = New-TimeSpan -Minutes 5
         $timer = [Diagnostics.Stopwatch]::StartNew()
         $uninstall_success = $false
         While (-Not ($uninstall_success -or ($timer.Elapsed -gt $timeout))) {
@@ -84,7 +84,7 @@ Function Install ($channel) {
 
     # Wait-Job and Receive-Job aren't reliable for waiting for the installation to complete nor to find the result of the
     # installation.  We can work around this by waiting for the install log to get generated and then read its contents.
-    $timeout = New-TimeSpan -Seconds 60
+    $timeout = New-TimeSpan -Minutes 5
     $timer = [Diagnostics.Stopwatch]::StartNew()
     $install_success = $false
     While (-Not ($install_success -or ($timer.Elapsed -gt $timeout))) {
