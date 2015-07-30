@@ -41,13 +41,7 @@
     mkdir ~/bin &&
     mkdir ~/lib &&
     make install;
-    cd ~/ &&
-    wget http://ftpmirror.gnu.org/binutils/binutils-2.24.tar.gz &&
-    tar jxf binutils-2.24.tar.gz &&
-    cd binutils-2.24 &&
-    cmake .. -DCMAKE_INSTALL_PREFIX=~/ &&
-    make &&
-    make install;
+    export COMPILER_PATH=/usr/bin;
     # sudo apt-get update -qq;
     # sudo apt-get install -qq libcurl4-openssl-dev libelf-dev libdw-dev binutils-dev;
     cd ~/ &&
