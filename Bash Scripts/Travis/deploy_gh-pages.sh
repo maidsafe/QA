@@ -35,9 +35,8 @@
     cd ~/ &&
     wget https://fedorahosted.org/releases/e/l/elfutils/0.163/elfutils-0.163.tar.bz2 &&
     tar jxf elfutils-0.163.tar.bz2 &&
-    mkdir elfutils-0.163/build &&
-    cd elfutils-0.163/build &&
-    cmake .. -DCMAKE_INSTALL_PREFIX=~/ &&
+    cd elfutils-0.163 &&
+    ./configure --prefix=~/ &&
     make &&
     mkdir ~/bin &&
     mkdir ~/lib &&
