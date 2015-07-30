@@ -36,13 +36,13 @@
     wget https://fedorahosted.org/releases/e/l/elfutils/0.163/elfutils-0.163.tar.bz2 &&
     tar jxf elfutils-0.163.tar.bz2 &&
     cd elfutils-0.163 &&
-    ./configure --prefix=~/ &&
+    ./configure --prefix=$HOME &&
     make &&
     mkdir ~/bin &&
     mkdir ~/lib &&
     make install;
-    export LIBELF_LIBRARIES=~/;
-    export LIBELF_INCLUDE_DIRS=~/;
+    export LIBELF_LIBRARIES=$HOME;
+    export LIBELF_INCLUDE_DIRS=$HOME;
     ## export COMPILER_PATH=/usr/bin;
     # sudo apt-get update -qq;
     # sudo apt-get install -qq libcurl4-openssl-dev libelf-dev libdw-dev binutils-dev;
