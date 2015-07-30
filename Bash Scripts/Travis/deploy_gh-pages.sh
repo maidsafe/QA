@@ -44,7 +44,8 @@
     export COMPILER_PATH=/usr/bin;
     export LIBELF_LIBRARIES=$HOME;
     export LIBELF_INCLUDE_DIRS=$HOME;
-    ## export COMPILER_PATH=/usr/bin;
+    export LIBRARY_PATH=$LIBRARY_PATH:$HOME/lib;
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$HOME/lib;
     # sudo apt-get update -qq;
     # sudo apt-get install -qq libcurl4-openssl-dev libelf-dev libdw-dev binutils-dev;
     cd ~/ &&
