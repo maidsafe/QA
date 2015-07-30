@@ -32,8 +32,14 @@
     cd .. &&
     ghp-import -n docs-stage &&
     git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages;
-    sudo apt-get update -qq;
-    sudo apt-get install -qq libcurl4-openssl-dev libelf-dev libdw-dev binutils-dev;
+    wget https://fedorahosted.org/releases/e/l/elfutils/0.161/elfutils-0.161.tar.bz2 &&
+    tar jxf elfutils-0.161.tar.bz2 &&
+    cd elfutils-0.161 &&
+    ./configure --prefix=$HOME &&
+    make &&
+    make install;
+    # sudo apt-get update -qq;
+    # sudo apt-get install -qq libcurl4-openssl-dev libelf-dev libdw-dev binutils-dev;
     wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
     tar xzf master.tar.gz &&
     mkdir kcov-master/build &&
