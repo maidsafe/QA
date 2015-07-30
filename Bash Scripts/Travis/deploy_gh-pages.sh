@@ -58,5 +58,5 @@
     make install;
     cd ~/build/$TRAVIS_REPO_SLUG &&
     pwd &&
-    ~/bin/kcov --service=travis-ci --coveralls-id=$TRAVIS_JOB_ID --exclude-pattern=/.cargo target/kcov target/debug/$PROJECT_NAME-*;
+    ~/bin/kcov --coveralls-id=$TRAVIS_JOB_ID --exclude-pattern=/.cargo target/kcov target/debug/$PROJECT_NAME-*;
   fi
