@@ -32,22 +32,24 @@
     cd .. &&
     ghp-import -n docs-stage &&
     git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages;
+    cd ~/ &&
     wget https://fedorahosted.org/releases/e/l/elfutils/0.163/elfutils-0.163.tar.bz2 &&
     tar jxf elfutils-0.163.tar.bz2 &&
     cd elfutils-0.163 &&
-    ./configure --prefix=$HOME &&
+    cmake .. -DCMAKE_INSTALL_PREFIX=~/ &&
     make &&
+    mkdir ~/bin &&
+    mkdir ~/lib &&
     make install;
     # sudo apt-get update -qq;
     # sudo apt-get install -qq libcurl4-openssl-dev libelf-dev libdw-dev binutils-dev;
+    cd ~/ &&
     wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
     tar xzf master.tar.gz &&
     mkdir kcov-master/build &&
     cd kcov-master/build &&
     cmake .. -DCMAKE_INSTALL_PREFIX=~/ &&
     make &&
-    mkdir ~/bin
-    mkdir ~/lib
     make install &&
     cd ../.. &&
     ~/bin/kcov --coveralls-id=$TRAVIS_JOB_ID --exclude-pattern=/.cargo target/kcov target/debug/$PROJECT_NAME-*;
