@@ -32,9 +32,9 @@
     cd .. &&
     ghp-import -n docs-stage &&
     git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages;
-    wget https://fedorahosted.org/releases/e/l/elfutils/0.161/elfutils-0.161.tar.bz2 &&
-    tar jxf elfutils-0.161.tar.bz2 &&
-    cd elfutils-0.161 &&
+    wget https://fedorahosted.org/releases/e/l/elfutils/0.163/elfutils-0.163.tar.bz2 &&
+    tar jxf elfutils-0.163.tar.bz2 &&
+    cd elfutils-0.163 &&
     ./configure --prefix=$HOME &&
     make &&
     make install;
