@@ -41,6 +41,7 @@
     mkdir ~/bin &&
     mkdir ~/lib &&
     make install;
+    export COMPILER_PATH=/usr/bin;
     export LIBELF_LIBRARIES=$HOME;
     export LIBELF_INCLUDE_DIRS=$HOME;
     ## export COMPILER_PATH=/usr/bin;
