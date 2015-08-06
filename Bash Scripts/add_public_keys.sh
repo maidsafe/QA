@@ -21,5 +21,5 @@ PublicKeysDir=$(cd "$(dirname "${BASH_SOURCE[0]}")/../Public Keys" && pwd)
 for File in $PublicKeysDir/*
 do
   echo "Processing \"$File\"..."
-  cat $File | ssh "$1" 'cat >> .ssh/authorized_keys'
+  echo "$(echo -en "\n")$(cat $File)" | ssh "$1" 'cat >> .ssh/authorized_keys'
 done
