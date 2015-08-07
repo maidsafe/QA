@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [[ $# != 1 || "$1" == "-h" || "$1" == "--help" ]]; then
-	echo "
+  echo "
 This adds all public keys inside the Public Keys folder of this repository to
 the ~/.ssh/authorized_keys file of the remote target.
 
@@ -10,9 +10,9 @@ hostname for the ssh commands.  You must already be able to ssh to the target
 without the need for a password.
 
 Example usage:
-    ./add_public_keys.sh peer1@peer_prog.maidsafe.net
+    ./${0##*/} peer1@peer_prog.maidsafe.net
 "
-    exit 0;
+  exit 0;
 fi
 
 IFS=$(echo -en "\n\b")
