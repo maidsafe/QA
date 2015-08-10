@@ -42,5 +42,6 @@ fi
 # Invoke the script and scp the resulting packages
 "$CreatePackageScript"
 ssh apt.maidsafe.net 'mkdir -p ~/systemd/ && mkdir -p ~/SysV-style/'
+scp "$VaultRoot"/packages/linux/safe_vault_*.tar apt.maidsafe.net:~/
 scp "$VaultRoot"/packages/linux/systemd/safe* apt.maidsafe.net:~/systemd/
 scp "$VaultRoot"/packages/linux/SysV-style/safe* apt.maidsafe.net:~/SysV-style/
