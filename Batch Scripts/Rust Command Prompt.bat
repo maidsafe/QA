@@ -1,5 +1,5 @@
 @echo OFF
-set MissingArg=You didn't pass RUST_BETA or RUST_NIGHTLY as a command line argument.  Using RUST_NIGHTLY.
+set MissingArg=You didn't pass RUST_STABLE, RUST_BETA or RUST_NIGHTLY as a command line argument.  Using RUST_NIGHTLY.
 if [%1]==[] (
     echo %MissingArg% & set Version=%RUST_NIGHTLY%
 ) else (
