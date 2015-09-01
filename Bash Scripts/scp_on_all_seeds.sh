@@ -18,16 +18,17 @@ Copy the dir \"foo\" from local to seeds' \"bar\" dir
 fi
 
 regex='(.*)REMOTE:(.*)'
+# Show commands as they execute
+set -x
 for peer in 1 2 3 4 5 6; do
   command="scp"
   for var in "$@"; do
     while [[ $var =~ $regex ]]; do
-	  var="${BASH_REMATCH[1]}seed-$peer.maidsafe.net:${BASH_REMATCH[2]}"
-	done
-	command="$command $var"
+      var="${BASH_REMATCH[1]}seed-$peer.maidsafe.net:${BASH_REMATCH[2]}"
+    done
+    command="$command $var"
   done
-  # Show commands as they execute
-  set -x
-  $command
-  set +x
+  $command &
 done
+
+wait

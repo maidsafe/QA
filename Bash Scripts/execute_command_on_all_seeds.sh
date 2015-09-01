@@ -12,9 +12,11 @@ Example usage:
   exit 0;
 fi
 
+# Show commands as they execute
+set -x
+
 for peer in 1 2 3 4 5 6; do
-  # Show commands as they execute
-  set -x
-  ssh seed-$peer.maidsafe.net "$1"
-  set +x
+  ssh seed-$peer.maidsafe.net "$1" &
 done
+
+wait
