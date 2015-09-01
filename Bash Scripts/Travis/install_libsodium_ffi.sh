@@ -5,6 +5,5 @@ cd libsodium-1.0.3
 ./configure --prefix=$HOME/libsodium-1.0.3
 make check
 make install
-ls -al /home/travis/libsodium-1.0.3/lib
-PATH=/home/travis/libsodium-1.0.3/lib:$PATH
+export LD_LIBRARY_PATH=/home/travis/libsodium-1.0.3/lib:$LD_LIBRARY_PATH
 cd ..
