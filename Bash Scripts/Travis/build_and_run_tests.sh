@@ -9,5 +9,3 @@ trap 'exit' ERR
 
 cargo build --release --verbose
 cargo test --release
-cargo build --verbose
-cargo test
