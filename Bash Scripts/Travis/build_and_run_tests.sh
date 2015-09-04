@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Show expanded commands while running
+set -x
+
 # Stop the script if any command fails
 set -o errtrace
 trap 'exit' ERR
