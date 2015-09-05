@@ -7,10 +7,14 @@ set -x
 set -o errtrace
 trap 'exit' ERR
 
+# Set the elfutils version if it isn't already set
+if [ -z "$ElfUtilsVersion" ]; then
+  ElfUtilsVersion=0.163
+fi
+
 cd $HOME
 
 # Check to see if elfutils dir has been retrieved from cache
-ElfUtilsVersion=0.163
 ElfUtilsInstallPath=$HOME/elfutils-$ElfUtilsVersion
 Cores=$((hash nproc 2>/dev/null && nproc) || (hash sysctl 2>/dev/null && sysctl -n hw.ncpu) || echo 1)
 if [ ! -d "$ElfUtilsInstallPath/lib" ]; then
