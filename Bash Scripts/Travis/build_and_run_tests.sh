@@ -7,5 +7,9 @@ set -x
 set -o errtrace
 trap 'exit' ERR
 
-cargo build --release --verbose
-cargo test --release
+if [ ! -z "$Features" ]; then
+  WithFeatures=" --features $Features"
+fi
+
+cargo build --release --verbose $WithFeatures
+cargo test --release $WithFeatures
