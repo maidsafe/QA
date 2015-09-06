@@ -45,7 +45,10 @@ make -j$Cores
 make install
 
 # Build the project's tests and run them under kcov
+if [ ! -z "$Features" ]; then
+  WithFeatures=" --features $Features"
+fi
 cd $TRAVIS_BUILD_DIR
-cargo test --no-run
+cargo test --no-run $WithFeatures
 ProjectName=${TRAVIS_REPO_SLUG##*/};
 $HOME/bin/kcov --coveralls-id=$TRAVIS_JOB_ID --include-path=src target/kcov target/debug/$ProjectName-*
