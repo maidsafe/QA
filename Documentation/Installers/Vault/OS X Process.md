@@ -1,45 +1,48 @@
 # Create Package for Vault on OS X
 
-- [ ] Run Jenkins job `maidsafe_vault_linux_nightly`
-- [ ] Check job completed successfully
+- [ ] Run the package creation script safe_vault/installer/osx/scripts/create_packages.sh in the safe_vault repository
 - Check installer can upgrade an existing version which is running
-  - [ ] Check test machine has older version already installed and `maidsafe_vault` is running
-  - [ ] Copy the current bootstrap and config files and note the size of the chunkstore/db dirs
+  - [ ] Check test machine has older version already installed and `safe_vault` is running
+  - [ ] Copy the current bootstrap and config files
   - [ ] New installer should run without errors
-  - [ ] Check new version of `maidsafe_vault` is running and is installed in `/usr/local/bin/`
-  - [ ] Check `maidsafe_vault` has `-rwxr-xr-x` permissions and `safe` owner name and group name
-  - [ ] Check bootstrap and config files haven't been overwritten, `chmod`ded or `chown`ed, and the chunkstore/db dirs are unmodified
+  - [ ] Check new version of `safe_vault` is running and is installed in `/usr/bin/`
+  - [ ] Check `safe_vault` has `-rwxr-xr-x` permissions and `safe` owner name and group name
+  - [ ] Check correct config file(s) are installed to the system cache dir `/var/cache/safe_vault`
+  - [ ] Check `safe_vault.crust.config` file has `-rw-r--r--` permissions and `safe` owner name and group name
+  - [ ] Check bootstrap and config files are not present in app support dir `$HOME/.config/safe_vault/`
 - Check installer can upgrade an existing version which is not running
-  - [ ] Check test machine has older version already installed and `maidsafe_vault` is NOT running
-  - [ ] Copy the current bootstrap and config files and note the size of the chunkstore/db dirs
+  - [ ] Check test machine has older version already installed and `safe_vault` is NOT running
+  - [ ] Copy the current bootstrap and config files
   - [ ] New installer should run without errors
-  - [ ] Check new version of `maidsafe_vault` is running and is installed in `/usr/local/bin/`
-  - [ ] Check `maidsafe_vault` has `-rwxr-xr-x` permissions and `safe` owner name and group name
-  - [ ] Check bootstrap and config files haven't been overwritten, `chmod`ded or `chown`ed, and the chunkstore/db dirs are unmodified
+  - [ ] Check new version of `safe_vault` is running and is installed in `/usr/bin/`
+  - [ ] Check `safe_vault` has `-rwxr-xr-x` permissions and `safe` owner name and group name
+  - [ ] Check correct config file(s) are installed to the system cache dir `/var/cache/safe_vault`
+  - [ ] Check `safe_vault.crust.config` file has `-rw-r--r--` permissions and `safe` owner name and group name
+  - [ ] Check bootstrap and config files are not present in app support dir `$HOME/.config/safe_vault/`
 - Check installer succeeds on machine with no previous version installed
   - [ ] Check test machine has no version already installed
   - [ ] Installer should run without errors
-  - [ ] Check new version of `maidsafe_vault` is running and is installed in `/usr/local/bin/`
-  - [ ] Check `maidsafe_vault` has `-rwxr-xr-x` permissions and `SAFE` owner name and group name
-  - [ ] Check bootstrap file is installed in `/var/cache/maidsafe/` has `-rw-r--r--` permissions and `safe` owner name and `root` group name
-  - [ ] Check config file is installed in `/etc/` has `-rw-r--r--` permissions and `safe` owner name and `root` group name
+  - [ ] Check new version of `safe_vault` is running and is installed in `/usr/bin/`
+  - [ ] Check `safe_vault` has `-rwxr-xr-x` permissions and `safe` owner name and group name
+  - [ ] Check correct config file(s) are installed to the system cache dir `/var/cache/safe_vault`
+  - [ ] Check `safe_vault.crust.config` file has `-rw-r--r--` permissions and `safe` owner name and group name
+  - [ ] Check bootstrap and config files are not present in app support dir `$HOME/.config/safe_vault/`
 - Check repair where current version already installed
-  - [ ] Kill and remove existing version of `maidsafe_vault`
-  - [ ] Copy the current bootstrap and config files and note the size of the chunkstore/db dirs
+  - [ ] Kill and remove existing version of `safe_vault`
+  - [ ] Copy the current bootstrap and config files
   - [ ] Installer should rerun without errors
-  - [ ] Check `maidsafe_vault` is running and is installed in `/usr/local/bin/`
-  - [ ] Check `maidsafe_vault` has `-rwxr-xr-x` permissions and `safe` owner name and group name
-  - [ ] Check bootstrap and config files haven't been overwritten, `chmod`ded or `chown`ed, and the chunkstore/db dirs are unmodified
+  - [ ] Check `safe_vault` is running and is installed in `/usr/bin/`
+  - [ ] Check `safe_vault` has `-rwxr-xr-x` permissions and `safe` owner name and group name
+  - [ ] Check bootstrap and config files haven't been overwritten
   - [ ] Remove bootstrap and config files
   - [ ] Installer should rerun without errors
-  - [ ] Check `maidsafe_vault` has `-rwxr-xr-x` permissions and `safe` owner name and group name
-  - [ ] Check bootstrap file is installed in `/var/cache/maidsafe/` has `-rw-r--r--` permissions and `safe` owner name and `root` group name
-  - [ ] Check config file is installed in `/etc/` has `-rw-r--r--` permissions and `safe` owner name and `root` group name
+  - [ ] Check `safe_vault` has `-rwxr-xr-x` permissions and `safe` owner name and group name
+  - [ ] Check config file is installed in `/var/cache/safe_vault/` has `-rw-r--r--` permissions and `safe` owner name and `root` group name
 - Check uninstall
-  - [ ] Check `maidsafe_vault` is running
+  - [ ] Check `safe_vault` is running
   - [ ] Uninstall should run without errors
-  - [ ] Check `maidsafe_vault` is not running
-  - [ ] Check `maidsafe_vault`, bootstrap and config files have all been removed
+  - [ ] Check `safe_vault` is not running
+  - [ ] Check `safe_vault`, bootstrap and config files have all been removed
 - Check installer can be downloaded
   - [ ] Webpage should detect OS and show link to appropriate installer
   - [ ] Download installer and hash check it against original
