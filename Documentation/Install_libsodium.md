@@ -25,7 +25,7 @@ Or update your OS / shell specific .profile config file, such as `~/.bashrc`, `~
 
 If you wish to do this system wide on Ubuntu for example you could update `/etc/environment`
 
-For example edit your profile file with your favourite editor, for example :
+For example edit your profile file with your favourite editor:
 ```
 vim .bash_profile
 ```
