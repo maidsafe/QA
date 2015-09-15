@@ -21,7 +21,7 @@ One way to do this is from a terminal, for example if you downloaded the tarball
 ```
 export SODIUM_LIB_DIR=$HOME/libsodium-1.0.3/lib
 ```
-Or update your OS / shell specific .profile config file, such as `~/.bashrc`, `~/.bash_profile` 
+Or update your OS / shell specific .profile config file, such as `~/.bashrc`, `~/.bash_profile` if you are using bash
 If you wish to do this system wide on Ubuntu for example you can update `/etc/environment`
 
 For example edit your profile file with your favourite editor, for example :
