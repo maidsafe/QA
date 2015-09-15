@@ -29,7 +29,7 @@ For example edit your profile file with your favourite editor, for example :
 vim .bash_profile
 ```
 
-Add the path to where `libsodium.a` typically lives `export SODIUM_LIB_DIR=<path to file>` 
+Add the path to where `libsodium.a` typically lives `export SODIUM_LIB_DIR=<path-to-libsodium.a-dir>` 
 
 Now save your changes and restart your terminal, to see if your change has worked use :
 ```
