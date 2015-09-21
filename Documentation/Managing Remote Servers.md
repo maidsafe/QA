@@ -22,16 +22,20 @@ As soon as a new server is created, the following steps should be taken:
 
 1. ssh into the server as root
 1. create a sudo user named `qa` with a strong, unique, random password.  On Ubuntu:
+
     ```bash
     adduser qa
     adduser qa sudo
     ```
+
     or on Fedora:
+
     ```bash
     useradd qa
     passwd qa
     usermod qa -a -G wheel
     ```
+
 1. exit the ssh session
 1. add details of the server to an existing or new document in the QA folder of the private
 [Assets](https://github.com/maidsafe/Assets/tree/master/QA) repository
