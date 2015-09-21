@@ -5,7 +5,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 This runs an scp comamnd across each of the seed VMs.
 
 Replace \"scp\" with this script and use the term \"REMOTE\" to represent
-the remote endpoint.
+the \"qa\" user on the remote endpoint.
 
 Example usage:
 Copy the file \"foobar.txt\" from seed VM to local folder
@@ -24,7 +24,7 @@ for peer in 1 2 3 4 5 6; do
   command="scp"
   for var in "$@"; do
     while [[ $var =~ $regex ]]; do
-      var="${BASH_REMATCH[1]}seed-$peer.maidsafe.net:${BASH_REMATCH[2]}"
+      var="${BASH_REMATCH[1]}qa@seed-$peer.maidsafe.net:${BASH_REMATCH[2]}"
     done
     command="$command $var"
   done
