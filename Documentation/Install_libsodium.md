@@ -1,41 +1,44 @@
 # Install libsodium
 
-`libsodium` is a native dependency for [sodiumxoide](https://github.com/dnaq/sodiumoxide). Install sodium by following the instructions [here](http://doc.libsodium.org/installation/index.html).
+[libsodium](https://github.com/jedisct1/libsodium) is a native dependency of [sodiumoxide](https://github.com/dnaq/sodiumoxide).
 
-**For Windows:**
+### For Windows
 
-Download [prebuilt libsodium library](https://download.libsodium.org/libsodium/releases/libsodium-1.0.3-mingw.tar.gz)
+Download the appropriate version (32-bit or 64-bit) [prebuilt libsodium static library](https://github.com/maidsafe/QA/tree/master/Dependencies/Windows).
 
-Extract `libsodium.a` for x86/x64 from the corresponding folder in the archive to your local filesystem
+N.B. The path of the folder where libsodium.a will live cannot contain any spaces.
 
-Add this local path to `%SODIUM_LIB_DIR%` (`setx SODIUM_LIB_DIR <path-to-extracted-libsodium.a-dir>`).
-Restarting the command-prompt maybe necessary after this.
+Set environment variable `SODIUM_LIB_DIR` to the folder containing libsodium.a:
 
-**For OS X / Linux:**
-
-Download, unpack the tarball of [libsodium](https://download.libsodium.org/libsodium/releases/) and [install](https://download.libsodium.org/doc/installation/index.html)
-
-Set environment variable `SODIUM_LIB_DIR` to where `libsodium.a` resides :
-
-One way to do this is from a terminal, for example if you downloaded the tarball and extracted it in your $HOME directory:
-```
-export SODIUM_LIB_DIR=$HOME/libsodium-1.0.3/lib
-```
-Or update your OS / shell specific .profile config file, such as `~/.bashrc`, `~/.bash_profile` if you are using bash.
-
-If you wish to do this system wide on Ubuntu for example you could update `/etc/environment`
-
-For example edit your profile file with your favourite editor:
-```
-vim .bash_profile
+```batch
+setx SODIUM_LIB_DIR <path-to-libsodium.a-dir>
 ```
 
-Add the path to where `libsodium.a` typically lives `export SODIUM_LIB_DIR=<path-to-libsodium.a-dir>` 
+Start a new command-prompt to continue.
 
-Now save your changes and restart your terminal, to see if your change has worked use :
+### For OS X / Linux
+
+Download, unpack the most recent tarball of [libsodium](https://download.libsodium.org/libsodium/releases/), build the static variant and install to "/usr/local/":
+
+```bash
+LibSodiumVersion=1.0.3
+mkdir temp
+cd temp
+wget https://github.com/jedisct1/libsodium/releases/download/$LibSodiumVersion/libsodium-$LibSodiumVersion.tar.gz
+tar xfz libsodium-$LibSodiumVersion.tar.gz
+cd libsodium-$LibSodiumVersion
+./configure --enable-shared=no --disable-pie
+Cores=$((hash nproc 2>/dev/null && nproc) || (hash sysctl 2>/dev/null && sysctl -n hw.ncpu) || echo 1)
+make check -j$Cores
+sudo make install
 ```
-echo $SODIUM_LIB_DIR
+
+Set environment variable `SODIUM_LIB_DIR` to the folder containing libsodium.a:
+
+```bash
+export SODIUM_LIB_DIR=/usr/local/lib
 ```
 
-You should now be good to go
+You can make this a permanent environment variable by adding this export command to your OS / shell specific .profile config file (e.g. `~/.bashrc`, `~/.bash_profile`).
 
+If you wish to do this system wide on Ubuntu for example you could update `/etc/environment`.
