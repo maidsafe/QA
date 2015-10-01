@@ -84,15 +84,17 @@ exports = module.exports = function(args) {
   };
 
   var getNetworkType = function(callback) {
-    utils.postQuestion('Please select the type of network \n1. Spread \n2. Concentrated', function(type) {
-      type = parseInt(type);
-      if(isNaN(type) || type < 0 || type > 2) {
-        console.log('Invalid input');
-        getNetworkType(callback);
-      } else {
-        callback(null, type === 1);
-      }
-    });
+    //utils.postQuestion('Please select the type of network \n1. Spread \n2. Concentrated', function(type) {
+    //  type = parseInt(type);
+    //  if(isNaN(type) || type < 0 || type > 2) {
+    //    console.log('Invalid input');
+    //    getNetworkType(callback);
+    //  } else {
+    //    callback(null, type === 1);
+    //  }
+    //});
+    // TODO Passing hard coded false for indicating concentrated network - to be enhanced
+    callback(null, false);
   };
 
   var getDropletRegions = function(callback) {
@@ -107,7 +109,13 @@ exports = module.exports = function(args) {
   };
 
   var selectDropletRegion = function(spreadNetwork, callback) {
-    if (spreadNetwork) {
+    if (config.hasOwnProperty('imageRegion') && config.imageRegion) {
+      callback(null, [config.imageRegion]);
+    } else {
+      callback("imageRegion not specified in config");
+    }
+    // TODO - To be enhanced
+    /*if (spreadNetwork) {
       callback(null, dropletRegions);
       return;
     }
@@ -122,7 +130,7 @@ exports = module.exports = function(args) {
       } else {
         callback(null, [dropletRegions[index - 1]]);
       }
-    });
+    });*/
   };
 
   var createDroplets = function(selectedRegions, callback) {
@@ -130,6 +138,7 @@ exports = module.exports = function(args) {
     var region;
     var TempFunc = function(name, region, size, image, keys) {
       this.run = function(cb) {
+		console.log("Creating droplet -", name);  
         digitalOcean.createDroplet(name, region, size, image, keys, cb);
       };
       return this.run;
@@ -138,8 +147,7 @@ exports = module.exports = function(args) {
     console.log("Creating droplets...");
     for (var i = 0; i < networkSize; i++) {
       region = selectedRegions[i % selectedRegions.length];
-      name = auth.getUserName() + '-' + selectedLibraryRepoName + '-TN-' + region + '-' + (i+1);
-      console.log("Creating droplet -", name);
+      name = auth.getUserName() + '-' + selectedLibraryRepoName + '-TN-' + region + '-' + (i+1);      
       requests.push(new TempFunc(name, region, config.dropletSize, config.imageId, config.sshKeys));
     }
     async.series(requests, callback);
