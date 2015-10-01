@@ -65,7 +65,7 @@ var Api = function(token, testMode) {
 
   this.getDroplet = function(id, callback) {
     if (testMode) {
-      callback(null, require('../droplet.json'));
+      callback(null, require('../droplet_response_template.json'));
       return;
     }
     client.get('v2/droplets/' + id, function(err, response, body) {

@@ -1,6 +1,6 @@
 {
   "auth_repo": "git@github.com:maidsafe/droplet_deployer_creds.git",
-  "platforms": ["windows_nt", "linux"],
+  "platforms": ["linux"],
   "workspace": "temp_job",
   "outFolder": "output",
   "outputIPListFile": "ip_list",
