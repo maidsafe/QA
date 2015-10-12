@@ -19,7 +19,7 @@ Ideally, you should be able to ssh to the apt and yum servers without the need
 for a password.
 
 Example usage:
-    ./${0##*/} \"/home/me/SuperProject/SAFE Vault\"
+    ./${0##*/} \"/home/maidsafe/safe_vault\"
 "
   exit 0;
 }
@@ -35,7 +35,7 @@ if [[ "$#" -eq 1 ]]; then
 else
   VaultRoot=$(pwd)
 fi
-CreatePackageScript="$VaultRoot/installer/linux/scripts/create_packages.sh"
+CreatePackageScript="$VaultRoot/installer/linux/create_packages.sh"
 
 # Check the repo path contains the expected script
 if [[ "$#" -gt 1 || ! -x "$CreatePackageScript" ]]; then
@@ -53,3 +53,4 @@ scp "$VaultRoot"/packages/linux/systemd/safe*.rpm yum-alpha.maidsafe.net:~/syste
 scp "$VaultRoot"/packages/linux/SysV-style/safe*.rpm yum-alpha.maidsafe.net:~/SysV-style/ &
 
 wait
+
