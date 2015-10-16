@@ -24,8 +24,8 @@ if [[ $CommitMessage == versionchangeto* ]]; then
   mkdir -p latest
   cp -rf ../target/doc/* $Version
   cp -rf ../target/doc/* latest
-  git config --global user.email dev@maidsafe.net
-  git config --global user.name maidsafe-jenkins
+  git config --global user.email qa@maidsafe.net
+  git config --global user.name MaidSafe-QA
   git tag $Version -a -m "Version $Version"
   git push -q https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG} --tags
 fi
