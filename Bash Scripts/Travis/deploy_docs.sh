@@ -15,6 +15,8 @@ cargo doc
 echo "<meta http-equiv=refresh content=0;url=${ProjectName}/index.html>" > target/doc/index.html
 pip install --user ghp-import
 CommitMessage=$(git log -1 | tr '[:upper:]' '[:lower:]' | grep "version change to " | tr -d ' ')
+git config --global user.email qa@maidsafe.net
+git config --global user.name MaidSafe-QA
 git clone https://github.com/${TRAVIS_REPO_SLUG}.git --branch gh-pages --single-branch docs-stage
 cd docs-stage
 rm -rf .git*
@@ -24,8 +26,6 @@ if [[ $CommitMessage == versionchangeto* ]]; then
   mkdir -p latest
   cp -rf ../target/doc/* $Version
   cp -rf ../target/doc/* latest
-  git config --global user.email dev@maidsafe.net
-  git config --global user.name maidsafe-jenkins
   git tag $Version -a -m "Version $Version"
   git push -q https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG} --tags
 fi
