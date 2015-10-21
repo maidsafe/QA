@@ -1,0 +1,24 @@
+{
+  "name": "droplet_deployer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maidsafe/QA.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/maidsafe/QA/issues"
+  },
+  "homepage": "https://github.com/maidsafe/QA#readme",
+  "dependencies": {
+    "async": "^1.4.2",
+    "request-json": "^0.5.3",
+    "scp2": "^0.2.2"
+  }
+}
