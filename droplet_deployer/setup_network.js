@@ -1,6 +1,7 @@
 exports = module.exports = function(args) {
   var fs = require('fs');
   var os = require('os');
+  var fse = require('fs-extra')
   var scpClient = require('scp2');
   var async = require('async');
   var exec = require('child_process').exec;
@@ -104,6 +105,25 @@ exports = module.exports = function(args) {
         return;
       }
       dropletRegions = availableRegions;
+      callback(null);
+    });
+  };
+
+  var validateUniqueNetwork = function(callback) {
+    digitalOcean.getDropletList(function(err, list) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      var userName = auth.getUserName();
+      var pattern = userName + '-' + selectedLibraryRepoName;
+      for (var i in list) {
+        if (list[i].name.indexOf(pattern) === 0) {
+          callback('User: ' + userName + ' has an existing network for ' + selectedLibraryRepoName +
+                   '.\nPlease clear existing network with the Drop Network option.\n\n');
+          return;
+        }
+      }
       callback(null);
     });
   };
@@ -271,23 +291,23 @@ exports = module.exports = function(args) {
   };
 
   var generateConfigFile = function(callback) {
-    var bootstrapFile;
+    var configFile;
     var spaceDelimittedFile = '';
-    bootstrapFile = require('./bootstrap_template.json');
+    configFile = require('./config_template.json');
     if (connectionType != 3) {
-      bootstrapFile['tcp_listening_port'] = listeningPort | config.listeningPort;
+      configFile['tcp_listening_port'] = listeningPort | config.listeningPort;
     }
     if (connectionType != 2) {
-      bootstrapFile['utp_listening_port'] = listeningPort | config.listeningPort;
+      configFile['utp_listening_port'] = listeningPort | config.listeningPort;
     }
-    bootstrapFile['beacon_port'] = beaconPort | config.beaconPort;
-    bootstrapFile['hard_coded_contacts'] = generateEndPoints();
+    configFile['beacon_port'] = beaconPort | config.beaconPort;
+    configFile['hard_coded_contacts'] = generateEndPoints();
     utils.deleteFolderRecursive(config.outFolder);
     fs.mkdirSync(config.outFolder);
     fs.mkdirSync(config.outFolder + '/scp');
     var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibraryRepoName;
-    fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.bootstrap.cache',
-        JSON.stringify(bootstrapFile, null, 2));
+    fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.config.cache',
+        JSON.stringify(configFile, null, 2));
     for (var i in createdDroplets) {
       spaceDelimittedFile += spaceDelimittedFile ? ' ' : '';
       spaceDelimittedFile += createdDroplets[i].networks.v4[0].ip_address;
@@ -297,10 +317,13 @@ exports = module.exports = function(args) {
   };
 
   var copyBinary = function(callback) {
-    var inStream = fs.createReadStream(binaryPath + binaryName);
-    var outStream = fs.createWriteStream(config.outFolder + '/scp/' + binaryName);
-    inStream.pipe(outStream);
-    callback(null);
+    fse.copy(binaryPath + binaryName, config.outFolder + '/scp/' + binaryName, function (err) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      callback(null);
+    });
   };
 
   var transferFiles = function(callback) {
@@ -354,6 +377,7 @@ exports = module.exports = function(args) {
       (libraryConfig.hasOwnProperty('example') ? 'examples' : '') + '/';
     buildPath = config.workspace + '/' + selectedLibraryRepoName;
     async.waterfall([
+      validateUniqueNetwork,
       getDropletRegions,
       clone,
       build,
@@ -373,7 +397,7 @@ exports = module.exports = function(args) {
       printResult
     ], function(err) {
       if (err) {
-        console.log(err);
+        console.error(err);
         return;
       }
       console.log('Completed Setup - Output folder ->', config.outFolder);

@@ -20,7 +20,7 @@ var AuthManager = function() {
         callback(err);
         return;
       }
-      userName = stdout.trim();
+      userName = stdout.trim().replace(/[\W_]+/g, "-");
       userName ? callback(null) : callback('git config --global user.name is not configured');
     });
   };
