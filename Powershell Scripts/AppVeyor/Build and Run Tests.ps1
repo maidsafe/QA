@@ -3,11 +3,16 @@ if ($env:Features) {
     $with_features = "--features",$env:Features
 }
 
+# Use Release flag if required
+if ($env:CONFIGURATION -eq "Release") {
+    $release_flag = "--release"
+}
+
 # Exit the script if building fails
 $ErrorActionPreference = "Stop"
 
 # Build library and tests
-Invoke-Command { cargo test --no-run --verbose $with_features --release } -NoNewScope
+Invoke-Command { cargo test --no-run --verbose $with_features $release_flag } -NoNewScope
 
 # Prepare test script
 $cargo_test = {
@@ -15,7 +20,10 @@ $cargo_test = {
     if ($env:Features) {
         $with_features = "--features",$env:Features
     }
-    cargo test $with_features --release
+    if ($env:CONFIGURATION -eq "Release") {
+        $release_flag = "--release"
+    }
+    cargo test $with_features $release_flag
     $LASTEXITCODE > TestResult.txt
 }
 

@@ -17,7 +17,7 @@ Start-FileDownload "http://static.rust-lang.org/dist/2015-10-19/$rust_install" -
 Start-Process -FilePath msiexec -ArgumentList /i, $rust_install, /quiet, INSTALLDIR="C:\Rust" -Wait
 
 # Add Rust to path
-$env:Path = $env:Path + ";C:\Rust\bin"
+$env:Path = "C:\Rust\bin;" + $env:Path
 
 "Rust version:"
 ""
