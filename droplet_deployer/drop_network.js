@@ -4,7 +4,7 @@ exports = module.exports = function() {
   var auth = require('./common/auth');
   var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken(), config.testMode);
   var async = require('async');
-  var libraryName;
+  var libraryKey;
   var droplets = [];
 
   var getDropletList = function(callback) {
@@ -13,7 +13,7 @@ exports = module.exports = function() {
         callback(err);
         return;
       }
-      var pattern = auth.getUserName() + '-' + libraryName;
+      var pattern = auth.getUserName() + '-' + libraryKey;
       for (var i in list) {
         if (list[i].name.indexOf(pattern) === 0) {
           droplets.push(list[i]);
@@ -60,8 +60,6 @@ exports = module.exports = function() {
   };
 
   var onLibrarySelected = function(index) {
-    //var isExample;
-    var temp;
     index = parseInt(index);
     var keys = [];
     for (var key in config.libraries) {
@@ -72,9 +70,7 @@ exports = module.exports = function() {
       showMainMenu();
       return;
     }
-    var key = keys[index -1 ];
-    temp = config.libraries[key].url.split('/');
-    libraryName = temp[temp.length - 1].split('.')[0];
+    libraryKey = keys[index - 1];
     dropNetwork();
   };
 
@@ -84,7 +80,7 @@ exports = module.exports = function() {
     var isExample;
     for (var key in config.libraries) {
       isExample = config.libraries[key].hasOwnProperty('example');
-      libOptions +=  (i + '. ' + key + ' ' + (isExample ? 'Example' : 'Binary')
+      libOptions +=  (i + '. ' + key.replace(/-.*/g, "") + ' ' + (isExample ? 'Example' : 'Binary')
       + ' - ' + (isExample ? config.libraries[key]['example'] : config.libraries[key]['binary']) + '\n');
       i++;
     }

@@ -12,6 +12,7 @@ exports = module.exports = function(args) {
 
   var ADVANCED_ARG = 'advanced';
 
+  var selectedLibraryKey;
   var selectedLibraryRepoName;
   var libraryConfig;
   var binaryPath;
@@ -116,10 +117,10 @@ exports = module.exports = function(args) {
         return;
       }
       var userName = auth.getUserName();
-      var pattern = userName + '-' + selectedLibraryRepoName;
+      var pattern = userName + '-' + selectedLibraryKey;
       for (var i in list) {
         if (list[i].name.indexOf(pattern) === 0) {
-          callback('User: ' + userName + ' has an existing network for ' + selectedLibraryRepoName +
+          callback('User: ' + userName + ' has an existing network for ' + selectedLibraryKey +
                    '.\nPlease clear existing network with the Drop Network option.\n\n');
           return;
         }
@@ -167,7 +168,7 @@ exports = module.exports = function(args) {
     console.log("Creating droplets...");
     for (var i = 0; i < networkSize; i++) {
       region = selectedRegions[i % selectedRegions.length];
-      name = auth.getUserName() + '-' + selectedLibraryRepoName + '-TN-' + region + '-' + (i+1);      
+      name = auth.getUserName() + '-' + selectedLibraryKey + '-TN-' + region + '-' + (i+1);
       requests.push(new TempFunc(name, region, config.dropletSize, config.imageId, config.sshKeys));
     }
     async.series(requests, callback);
@@ -290,10 +291,33 @@ exports = module.exports = function(args) {
     return endPoints;
   };
 
-  var generateConfigFile = function(callback) {
+  var generateReporterConfigFiles = function(callback) {
     var configFile;
-    var spaceDelimittedFile = '';
-    configFile = require('./config_template.json');
+    configFile = require('./reporter_config_template.json');
+    var reporterEndpoints = [];
+    var reporterListeningPort = listeningPort | config.listeningPort;
+    for (var i in createdDroplets) {
+      reporterEndpoints.push(createdDroplets[i].networks.v4[0].ip_address + ':' + reporterListeningPort);
+    }
+
+    utils.deleteFolderRecursive(config.outFolder);
+    fs.mkdirSync(config.outFolder);
+    fs.mkdirSync(config.outFolder + '/scp');
+
+    for (var j in reporterEndpoints) {
+      var currentIP = reporterEndpoints[j].split(':')[0];
+      configFile['msg_to_send'] = 'Message from ' + currentIP;
+      configFile['listening_port'] = reporterListeningPort;
+      configFile['ips'] = reporterEndpoints;
+      fs.mkdirSync(config.outFolder + '/scp/' + currentIP);
+      fs.writeFileSync(config.outFolder + '/scp/' + currentIP + '/reporter.json', JSON.stringify(configFile, null, 2));
+    }
+    callback(null);
+  };
+
+  var generateStdConfigFile = function(callback) {
+    var configFile;
+    configFile = require('./std_config_template.json');
     if (connectionType != 3) {
       configFile['tcp_listening_port'] = listeningPort | config.listeningPort;
     }
@@ -306,8 +330,12 @@ exports = module.exports = function(args) {
     fs.mkdirSync(config.outFolder);
     fs.mkdirSync(config.outFolder + '/scp');
     var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibraryRepoName;
-    fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.config.cache',
-        JSON.stringify(configFile, null, 2));
+    fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.config.cache', JSON.stringify(configFile, null, 2));
+    callback(null);
+  };
+
+  var generateIPListFile = function(callback) {
+    var spaceDelimittedFile = '';
     for (var i in createdDroplets) {
       spaceDelimittedFile += spaceDelimittedFile ? ' ' : '';
       spaceDelimittedFile += createdDroplets[i].networks.v4[0].ip_address;
@@ -317,13 +345,21 @@ exports = module.exports = function(args) {
   };
 
   var copyBinary = function(callback) {
-    fse.copy(binaryPath + binaryName, config.outFolder + '/scp/' + binaryName, function (err) {
-      if (err) {
-        callback(err);
-        return;
+    if (binaryName === 'reporter') {
+      for (var i in createdDroplets) {
+        fse.copySync(binaryPath + binaryName,
+                     config.outFolder + '/scp/' + createdDroplets[i].networks.v4[0].ip_address  + "/" + binaryName);
       }
       callback(null);
-    });
+    } else {
+      fse.copy(binaryPath + binaryName, config.outFolder + '/scp/' + binaryName, function (err) {
+        if (err) {
+          callback(err);
+          return;
+        }
+        callback(null);
+      });
+    }
   };
 
   var transferFiles = function(callback) {
@@ -333,10 +369,9 @@ exports = module.exports = function(args) {
       return;
     }
     var TransferFunc = function(ip) {
-
       this.run = function(cb) {
         console.log("Transferring files to :: " + ip);
-        scpClient.scp(config.outFolder + '/scp/', {
+        scpClient.scp(config.outFolder + '/scp/' + ((binaryName === 'reporter') ? ip + '/' : ''), {
           host: ip,
           username: config.dropletUser,
           password: auth.getDopletUserPassword(),
@@ -364,38 +399,64 @@ exports = module.exports = function(args) {
 
   var buildLibrary = function(option) {
     var libraries = [];
+    var waterfallTasks = [];
     for (var key in config.libraries) {
       libraries.push(key);
     }
-    var selectedKey = libraries[option - 1];
-    var temp = config.libraries[selectedKey].url.split('/');
+    selectedLibraryKey = libraries[option - 1];
+    var temp = config.libraries[selectedLibraryKey].url.split('/');
     selectedLibraryRepoName = temp[temp.length - 1].split('.')[0];
-    libraryConfig = config.libraries[selectedKey];
+    libraryConfig = config.libraries[selectedLibraryKey];
     binaryName = (libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibraryRepoName) +
       BINARY_EXT;
     binaryPath = config.workspace + '/' + selectedLibraryRepoName + '/target/release/' +
       (libraryConfig.hasOwnProperty('example') ? 'examples' : '') + '/';
     buildPath = config.workspace + '/' + selectedLibraryRepoName;
-    async.waterfall([
+
+    waterfallTasks.push(
       validateUniqueNetwork,
       getDropletRegions,
       clone,
       build,
       stripBinary,
-      getNetworkSize,
-      getSeedNodeSize,
+      getNetworkSize
+    );
+
+    if (binaryName !== 'reporter') {
+      waterfallTasks.push(
+        getSeedNodeSize,
+        getConnectionType,
+        getBeaconPort
+      );
+    }
+
+    waterfallTasks.push(
+      getListeningPort,
       getNetworkType,
       selectDropletRegion,
       createDroplets,
-      getDroplets,
-      getConnectionType,
-      getBeaconPort,
-      getListeningPort,
-      generateConfigFile,
+      getDroplets
+    );
+
+    if (binaryName !== 'reporter') {
+      waterfallTasks.push(
+        generateStdConfigFile
+      );
+    } else {
+      waterfallTasks.push(
+        generateReporterConfigFiles
+      );
+    }
+
+    waterfallTasks.push(
+      generateIPListFile,
       copyBinary,
       transferFiles,
       printResult
-    ], function(err) {
+    );
+
+
+    async.waterfall(waterfallTasks, function(err) {
       if (err) {
         console.error(err);
         return;
@@ -427,12 +488,12 @@ exports = module.exports = function(args) {
     var isExample;
     for (var key in config.libraries) {
       isExample = config.libraries[key].hasOwnProperty('example');
-      libOptions +=  (i + '. ' + key + ' ' + (isExample ? 'Example' : 'Binary')
+      libOptions +=  (i + '. ' + key.replace(/-.*/g, "") + ' ' + (isExample ? 'Example' : 'Binary')
         + ' - ' + (isExample ? config.libraries[key]['example'] : config.libraries[key]['binary']) + '\n');
       i++;
     }
 
-    utils.postQuestion('Please choose the library for which the network is to be set up: ' + libOptions, onSetupOptionSelected);
+    utils.postQuestion('Please choose the entry for which the network is to be set up: ' + libOptions, onSetupOptionSelected);
   };
 
   showSetupOptions();

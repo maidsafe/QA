@@ -1,0 +1,8 @@
+{
+  "ips": null,
+  "msg_to_send": null,
+  "listening_port": null,
+  "service_runs": 3,
+  "output_report_path": "/home/qa/reporter_log.json",
+  "max_wait_before_restart_service_secs": 5
+}

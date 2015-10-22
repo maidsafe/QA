@@ -11,15 +11,19 @@
   "dropletUser": "qa",
   "remotePathToTransferFiles": "/home/qa/",
   "libraries" : {
-    "CRUST": {
+    "CRUST-1": {
       "url": "git@github.com:maidsafe/crust.git",
       "example": "crust_peer"
     },
-    "Routing": {
+    "CRUST-2": {
+      "url": "git@github.com:maidsafe/crust.git",
+      "example": "reporter"
+    },
+    "Routing-1": {
       "url": "git@github.com:maidsafe/routing.git",
       "example": "simple_key_value_store"
     },
-    "Vault": {
+    "Vault-1": {
       "url": "git@github.com:maidsafe/safe_vault.git",
       "binary": "safe_vault"
     }
