@@ -215,7 +215,7 @@ exports = module.exports = function(args) {
       });
     };
     console.log('Waiting for droplets to initialise');
-    setTimeout(getDropletInfo, 2 * 60 * 1000);
+    setTimeout(getDropletInfo, 1 * 60 * 1000);
   };
 
   var getConnectionType = function(callback) {
@@ -270,7 +270,7 @@ exports = module.exports = function(args) {
     }, true);
   };
 
-  var generateEndPoints = function() {
+  var generateEndPoints = function(stdListeningPort) {
     var endPoints = [];
     var ip;
     for (var i = 0; i < seedNodeSize; i++) {
@@ -278,13 +278,13 @@ exports = module.exports = function(args) {
       if (connectionType != 3) {
         endPoints.push({
           protocol: 'tcp',
-          address: ip
+          address: ip + ':' + stdListeningPort
         });
       }
       if (connectionType != 2) {
         endPoints.push({
           protocol: 'utp',
-          address: ip
+          address: ip + ':' + stdListeningPort
         });
       }
     }
@@ -309,6 +309,7 @@ exports = module.exports = function(args) {
       configFile['msg_to_send'] = 'Message from ' + currentIP;
       configFile['listening_port'] = reporterListeningPort;
       configFile['ips'] = reporterEndpoints;
+      configFile['output_report_path'] = '/home/qa/reporter_log_' + currentIP + '.json';
       fs.mkdirSync(config.outFolder + '/scp/' + currentIP);
       fs.writeFileSync(config.outFolder + '/scp/' + currentIP + '/reporter.json', JSON.stringify(configFile, null, 2));
     }
@@ -318,19 +319,20 @@ exports = module.exports = function(args) {
   var generateStdConfigFile = function(callback) {
     var configFile;
     configFile = require('./std_config_template.json');
+    var stdListeningPort = listeningPort | config.listeningPort;
     if (connectionType != 3) {
-      configFile['tcp_listening_port'] = listeningPort | config.listeningPort;
+      configFile['tcp_listening_port'] = stdListeningPort;
     }
     if (connectionType != 2) {
-      configFile['utp_listening_port'] = listeningPort | config.listeningPort;
+      configFile['utp_listening_port'] = stdListeningPort;
     }
     configFile['beacon_port'] = beaconPort | config.beaconPort;
-    configFile['hard_coded_contacts'] = generateEndPoints();
+    configFile['hard_coded_contacts'] = generateEndPoints(stdListeningPort);
     utils.deleteFolderRecursive(config.outFolder);
     fs.mkdirSync(config.outFolder);
     fs.mkdirSync(config.outFolder + '/scp');
     var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibraryRepoName;
-    fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.config.cache', JSON.stringify(configFile, null, 2));
+    fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.crust.config', JSON.stringify(configFile, null, 2));
     callback(null);
   };
 
