@@ -1,12 +1,20 @@
-. ".\Set Features and Build Type.ps1"
-
 # Exit the script if building fails
 $ErrorActionPreference = "Stop"
 
 # Prepare test script
 $cargo_test = {
     cd $env:APPVEYOR_BUILD_FOLDER
-    . ".\Set Features and Build Type.ps1"
+
+    # Use features if they've been set
+    if ($env:Features) {
+        $with_features = "--features",$env:Features
+    }
+
+    # Use Release flag if required
+    if ($env:CONFIGURATION -eq "Release") {
+        $release_flag = "--release"
+    }
+
     cargo test $with_features $release_flag
     $LASTEXITCODE > TestResult.txt
 }
@@ -14,7 +22,7 @@ $cargo_test = {
 # Run the test script
 ""
 "Starting tests."
-$job = Start-Job -ScriptBlock $cargo_test -Args $with_features
+$job = Start-Job -ScriptBlock $cargo_test
 
 # Set timeout to env var or use default of 10 minutes
 $timeout_ms = 600000
