@@ -1,12 +1,4 @@
-# Use features if they've been set
-if ($env:Features) {
-    $with_features = "--features",$env:Features
-}
-
-# Use Release flag if required
-if ($env:CONFIGURATION -eq "Release") {
-    $release_flag = "--release"
-}
+. ".\Set Features and Build Type.ps1"
 
 # Exit the script if building fails
 $ErrorActionPreference = "Stop"
@@ -14,12 +6,7 @@ $ErrorActionPreference = "Stop"
 # Prepare test script
 $cargo_test = {
     cd $env:APPVEYOR_BUILD_FOLDER
-    if ($env:Features) {
-        $with_features = "--features",$env:Features
-    }
-    if ($env:CONFIGURATION -eq "Release") {
-        $release_flag = "--release"
-    }
+    . ".\Set Features and Build Type.ps1"
     cargo test $with_features $release_flag
     $LASTEXITCODE > TestResult.txt
 }
