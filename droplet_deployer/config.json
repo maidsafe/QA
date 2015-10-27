@@ -10,6 +10,7 @@
   "maxSeedNodeSize": 6,
   "dropletUser": "qa",
   "remotePathToTransferFiles": "/home/qa/",
+  "remotePathToTransferTeamocilFiles": "/home/teamocil",
   "libraries" : {
     "CRUST-1": {
       "url": "git@github.com:maidsafe/crust.git",
@@ -31,7 +32,7 @@
   "beaconPort": 5484,
   "listeningPort": 5483,
   "dropletSize": "1gb",
-  "imageId": 14081930,
+  "imageId": 14125153,
   "imageRegion": "lon1",
   "sshKeys": [618734, 873713, 906915, 948546],
   "testMode": false

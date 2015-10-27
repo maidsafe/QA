@@ -1,0 +1,5 @@
+windows:
+  - name: deployer_pane
+    root: ~
+    panes:
+      - commands:

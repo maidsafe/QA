@@ -8,9 +8,11 @@ exports = module.exports = function(args) {
   var utils = require('./common/utils');
   var config = require('./config.json');
   var auth = require('./common/auth');
+  var SSH = require('simple-ssh');
   var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken(), config.testMode);
 
   var ADVANCED_ARG = 'advanced';
+  var TMUX_CMDS_KEY = 'tmux-commands';
 
   var selectedLibraryKey;
   var selectedLibraryRepoName;
@@ -346,6 +348,21 @@ exports = module.exports = function(args) {
     callback(null);
   };
 
+  var generateTeamocilTemplate = function(callback) {
+    if (!libraryConfig.hasOwnProperty(TMUX_CMDS_KEY)) {
+      return;
+    }
+    var fs = require('fs');
+    var buff = fs.readFileSync('./teamocil_template.yml');
+    var generatedFile = buff.toString();
+    var commands = libraryConfig[TMUX_CMDS_KEY];
+    for (var i in commands) {
+      generatedFile += '\n        - ' + commands[i];
+    }
+    fs.writeFileSync(config.outFolder + '/teamocil', generatedFile);
+    callback(null);
+  };
+
   var copyBinary = function(callback) {
     if (binaryName === 'reporter') {
       for (var i in createdDroplets) {
@@ -370,14 +387,14 @@ exports = module.exports = function(args) {
       callback(null);
       return;
     }
-    var TransferFunc = function(ip) {
+    var TransferFiles = function(scpCmd, remotePath) {
       this.run = function(cb) {
-        console.log("Transferring files to :: " + ip);
-        scpClient.scp(config.outFolder + '/scp/' + ((binaryName === 'reporter') ? ip + '/' : ''), {
+        console.log("Executing :: " + scpCmd);
+        scpClient.scp(scpCmd, {
           host: ip,
           username: config.dropletUser,
           password: auth.getDopletUserPassword(),
-          path: config.remotePathToTransferFiles
+          path: remotePath
         }, cb);
       };
 
@@ -402,14 +419,50 @@ exports = module.exports = function(args) {
         handleException(e);
       }
     };
+    var cmd;
     for (var i in createdDroplets) {
-      requests.push(new TransferFunc(createdDroplets[i].networks.v4[0].ip_address));
+      cmd = config.outFolder + '/scp/' + ((binaryName === 'reporter') ? createdDroplets[i].networks.v4[0].ip_address + '/' : '');
+      requests.push(new TransferFiles(cmd, config.remotePathToTransferFiles));
+      if (libraryConfig.hasOwnProperty(TMUX_CMDS_KEY)) {
+        cmd = config.outFolder + '/teamocil/';
+        requests.push(new TransferFiles(cmd, config.remotePathToTransferTeamocilFiles));
+      }
     }
     try {
       async.parallel(requests, retry);
     } catch (e) {
       handleException(e);
     }
+  };
+
+  var executeTeamocilCommands = function(callback) {
+    if (!libraryConfig.hasOwnProperty(TMUX_CMDS_KEY)) {
+      return;
+    }
+    var Handler = function(ssh, cmd) {
+      this.run = function(cb) {
+        ssh.exec(cmd, {
+          exit: cb // Returns error code
+        }).start();
+      };
+      return this.run;
+    };
+    var requests = [];
+    var ssh;
+    for (var i in createdDroplets) {
+      ssh = new SSH({
+        host: createdDroplets[i].networks.v4[0].ip_address,
+        user: config.dropletUser,
+        pass: auth.getDopletUserPassword()
+      });
+      requests.push(new Handler(ssh, 'tmux new-session -d \". ~/.bash_profile;teamocil sample\"'));
+    }
+    async.parallel(requests, function(err) {
+      if (err) {
+        console.log("Tmux command execution failed :: " + err);
+      }
+      callback(err);
+    });
   };
 
   var printResult = function(res, callback) {
@@ -474,8 +527,10 @@ exports = module.exports = function(args) {
 
     waterfallTasks.push(
       generateIPListFile,
+      generateTeamocilTemplate,
       copyBinary,
       transferFiles,
+      executeTeamocilCommands,
       printResult
     );
 
