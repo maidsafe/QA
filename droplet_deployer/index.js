@@ -45,35 +45,17 @@ var showMainMenu = function() {
 2. Drop Network', onMainOptionSelected);
 };
 
-//if (!isPlatformSupported()) {
-//  console.log("Os is not supported");
-//  process.exit();
-//  return;
-//}
-//
-//console.log('Validating authentication...');
-//auth.init(function(err) {
-//  if (err) {
-//    console.log(err);
-//    return;
-//  }
-//  showMainMenu();
-//});
+if (!isPlatformSupported()) {
+  console.log("Os is not supported");
+  process.exit();
+  return;
+}
 
-var pass = function(c) {
-  c(null, true);
-};
-
-var fail = function(v) {
-  this.d = function(c) {
-    c(v);
-  };
-  return this.d;
-};
-
-var req = [pass, pass, fail(10), pass, fail(20)];
-require('async').parallel(req, function(e, d) {
-  console.log(e);
-  req = req.slice(d.length - 1);
-  console.log(req);
+console.log('Validating authentication...');
+auth.init(function(err) {
+  if (err) {
+    console.log(err);
+    return;
+  }
+  showMainMenu();
 });
