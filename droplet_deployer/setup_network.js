@@ -384,10 +384,32 @@ exports = module.exports = function(args) {
       return this.run;
     };
     var requests = [];
+    var handleException = function(e) {
+      console.log("Error while transferring files :: " + e);
+      console.log("Re-trying again...");
+      async.parallel(requests, retry);
+    };
+    var retry = function(err, results) {
+      if (!err) {
+        callback(null);
+        return;
+      }
+      console.log('Transferring of files failed. Retrying again.');
+      requests = requests.slice(results.length - 1);
+      try {
+        async.parallel(requests, retry);
+      } catch(e) {
+        handleException(e);
+      }
+    };
     for (var i in createdDroplets) {
       requests.push(new TransferFunc(createdDroplets[i].networks.v4[0].ip_address));
     }
-    async.parallel(requests, callback);
+    try {
+      async.parallel(requests, retry);
+    } catch (e) {
+      handleException(e);
+    }
   };
 
   var printResult = function(res, callback) {
