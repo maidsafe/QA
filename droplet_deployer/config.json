@@ -10,7 +10,7 @@
   "maxSeedNodeSize": 6,
   "dropletUser": "qa",
   "remotePathToTransferFiles": "/home/qa/",
-  "remotePathToTransferTeamocilFiles": "/home/teamocil",
+  "remotePathToTransferTeamocilFiles": "/home/.teamocil",
   "libraries" : {
     "CRUST-1": {
       "url": "git@github.com:maidsafe/crust.git",
