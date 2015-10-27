@@ -14,7 +14,8 @@
   "libraries" : {
     "CRUST-1": {
       "url": "git@github.com:maidsafe/crust.git",
-      "example": "crust_peer"
+      "example": "crust_peer",
+      "tmux-commands": ["command-1", "command-2", "command-3"]
     },
     "CRUST-2": {
       "url": "git@github.com:maidsafe/crust.git",

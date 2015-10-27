@@ -469,7 +469,8 @@ exports = module.exports = function(args) {
     console.log('\n');
     for (var i in createdDroplets) {
       console.log(createdDroplets[i].name +
-      ' ssh ' + config.dropletUser + '@' + createdDroplets[i].networks.v4[0].ip_address);
+      ' ssh -o StrictHostKeyChecking=no ' + config.dropletUser + '@' + createdDroplets[i].networks.v4[0].ip_address +
+      ' \"tmux attach\"');
     }
     callback(null);
   };
