@@ -10,24 +10,26 @@
   "maxSeedNodeSize": 6,
   "dropletUser": "qa",
   "remotePathToTransferFiles": "/home/qa/",
-  "remotePathToTransferTeamocilFiles": "/home/.teamocil",
   "libraries" : {
     "CRUST-1": {
       "url": "git@github.com:maidsafe/crust.git",
       "example": "crust_peer",
-      "tmux-commands": ["command-1", "command-2", "command-3"]
+      "tmuxCommands": ["./crust_peer"]
     },
     "CRUST-2": {
       "url": "git@github.com:maidsafe/crust.git",
-      "example": "reporter"
+      "example": "reporter",
+      "tmuxCommands": ["./reporter reporter.json"]
     },
     "Routing-1": {
       "url": "git@github.com:maidsafe/routing.git",
-      "example": "simple_key_value_store"
+      "example": "simple_key_value_store",
+      "tmuxCommands": ["./simple_key_value_store"]
     },
     "Vault-1": {
       "url": "git@github.com:maidsafe/safe_vault.git",
-      "binary": "safe_vault"
+      "binary": "safe_vault",
+      "tmuxCommands": ["./safe_vault"]
     }
   },
   "beaconPort": 5484,

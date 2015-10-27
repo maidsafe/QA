@@ -23,9 +23,9 @@ var Utils = function() {
     stdout.write(question + '\n> ');
 
     stdin.once('data', function(data) {
-      result = data.toString().trim();
+      var result = data.toString().trim();
 
-      if (!result & !allowEmpty) {
+      if (!result && !allowEmpty) {
         // Ask again
         postQuestion(question, callback);
       } else {
@@ -33,7 +33,7 @@ var Utils = function() {
         console.log('\n');
         callback(result);
       }
-    })
+    });
   };
 
   this.getArguments = function() {
