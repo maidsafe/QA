@@ -38,7 +38,7 @@ var AuthManager = function() {
 
   var deleteRepo = function(callback) {
     var path = require('path');
-    require('./utils').deleteFolderRecursive(path.resolve(config.workspace));
+    require('./utils').deleteFolderRecursive(path.resolve(config.workspace + '/' + CLONED_REPO_NAME));
     callback(null);
   };
 

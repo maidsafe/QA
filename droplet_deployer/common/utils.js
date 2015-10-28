@@ -1,9 +1,10 @@
 var Utils = function() {
   var fs = require('fs');
+  var path = require('path');
 
   this.deleteFolderRecursive = function(path) {
-    if( fs.existsSync(path) ) {
-      fs.readdirSync(path).forEach(function(file,index){
+    if(fs.existsSync(path)) {
+      fs.readdirSync(path).forEach(function(file, index){
         var curPath = path + "/" + file;
         if(fs.lstatSync(curPath).isDirectory()) { // recurse
           deleteFolderRecursive(curPath);
@@ -46,6 +47,26 @@ var Utils = function() {
       }
     });
     return options;
+  };
+
+  this.getValidPath = function(message, callback) {
+    var stdin = process.stdin;
+    var stdout = process.stdout;
+
+    stdin.resume();
+    stdout.write(message + '\n> ');
+
+    stdin.once('data', function(data) {
+      var result = path.resolve(data.toString().trim());
+      if (fs.existsSync(result) && fs.lstatSync(result).isDirectory()) {
+        stdin.pause();
+        console.log('\n');
+        return callback(result);
+      } else {
+        stdout.write('Invalid Path\n\n');
+        getValidPath(message, callback);
+      }
+    });
   };
 
   return this;

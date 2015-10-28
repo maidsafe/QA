@@ -1,6 +1,7 @@
 exports = module.exports = function(args) {
   var fs = require('fs');
   var os = require('os');
+  var path = require('path');
   var fse = require('fs-extra');
   var scpClient = require('scp2');
   var async = require('async');
@@ -8,7 +9,10 @@ exports = module.exports = function(args) {
   var utils = require('./common/utils');
   var config = require('./config.json');
   var auth = require('./common/auth');
-  var SSH = require('simple-ssh');
+  var sshConnect = require('ssh2-connect');
+  var sshExec = require('ssh2-exec');
+  var ProgressBar = require('progress');
+  var Table = require('cli-table');
   var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken(), config.testMode);
 
   var ADVANCED_ARG = 'advanced';
@@ -20,6 +24,7 @@ exports = module.exports = function(args) {
   var binaryPath;
   var binaryName;
   var buildPath;
+  var buildFlags;
   var networkSize;
   var seedNodeSize;
   var dropletRegions;
@@ -27,13 +32,65 @@ exports = module.exports = function(args) {
   var connectionType;
   var beaconPort;
   var listeningPort;
+  var progressBar;
 
   var BINARY_EXT = {
     'windows_nt': '.exe',
     'linux': ''
   }[os.type().toLowerCase()];
 
+  var getRepositoryLocation = function(callback) {
+    var message = "Please select the source repository location\n---------\n" +
+      "1. GitHub master branch\n2. Local repository\n";
+
+    var onRepositoryLocationSelected = function(option) {
+      option = parseInt(option);
+      var validPathChosen = function(chosenPath) {
+        buildPath = chosenPath;
+        return callback(null);
+      };
+
+      if (option === 1) {
+        return callback(null);
+      } else if (option === 2) {
+        utils.getValidPath('Please enter the path to ' + selectedLibraryRepoName, validPathChosen);
+      } else {
+        console.log("Invalid option selected");
+        getRepositoryLocation(callback);
+      }
+    };
+
+    utils.postQuestion(message, onRepositoryLocationSelected);
+  };
+
+  var getBuildType = function(callback) {
+    var message = "\nPlease select the required build type\n1. Debug.\n2. Release.\n";
+    var onBuildTypeSelected = function(option) {
+      option = parseInt(option);
+      if (option === 1) {
+        return callback(null);
+      } else if (option === 2) {
+        buildFlags = ' --release';
+        return callback(null);
+      } else {
+        console.log("Invalid option selected");
+        getBuildType(callback);
+      }
+    };
+
+    utils.postQuestion(message, onBuildTypeSelected);
+  };
+
   var clone = function(callback) {
+    if (buildPath) {
+      console.log('Skipping Clone Step');
+      return callback(null);
+    }
+
+    // When clone option is chosen. clear complete workspace to prevent previous build cache's getting used
+    utils.deleteFolderRecursive(config.workspace);
+
+    buildPath = config.workspace + '/' + selectedLibraryRepoName;
     console.log('Cloning Repository - ' + selectedLibraryRepoName);
     exec('git clone ' + libraryConfig.url + ' ' +
           buildPath + ' --depth 1', function(err) {
@@ -42,18 +99,27 @@ exports = module.exports = function(args) {
   };
 
   var build = function(callback) {
-    var buildCommand = 'cargo build';
+    var targetPath = path.resolve(config.workspace + '/target-' + selectedLibraryKey);
+    var buildCommand = 'CARGO_TARGET_DIR=' + targetPath + ' cargo build';
     if (libraryConfig.hasOwnProperty('example')) {
       buildCommand += ' --example ' + libraryConfig['example'];
     }
-    buildCommand += ' --release';
+    buildCommand += buildFlags ? buildFlags : '';
     console.log('Building Repository - ' + selectedLibraryRepoName);
     exec('cd ' + buildPath + ' && ' + buildCommand, function(err) {
+      var buildTypePathSegment = buildFlags ? '/release/' : '/debug/';
+      var exampleBinaryPathSegment = libraryConfig.hasOwnProperty('example') ? 'examples/' : '';
+      binaryPath = targetPath + buildTypePathSegment + exampleBinaryPathSegment;
       callback(err);
     });
   };
 
   var stripBinary = function(callback) {
+    if (!buildFlags) {
+      console.log('Skipping Strip binary Step');
+      return callback(null);
+    }
+
     exec('strip -s ' + binaryPath + binaryName, function(err) {
       callback(err);
     });
@@ -74,6 +140,11 @@ exports = module.exports = function(args) {
   };
 
   var getSeedNodeSize = function(callback) {
+    if (binaryName === 'crust_peer') {
+      seedNodeSize = networkSize;
+      return callback(null);
+    }
+
     utils.postQuestion('Please enter the size of the seed nodes between ' +
       config.minSeedNodeSize + '-' + config.maxSeedNodeSize, function(size) {
       size = parseInt(size);
@@ -161,7 +232,7 @@ exports = module.exports = function(args) {
     var region;
     var TempFunc = function(name, region, size, image, keys) {
       this.run = function(cb) {
-		console.log("Creating droplet -", name);
+        console.log("Creating droplet -", name);
         digitalOcean.createDroplet(name, region, size, image, keys, cb);
       };
       return this.run;
@@ -176,18 +247,29 @@ exports = module.exports = function(args) {
     async.series(requests, callback);
   };
 
-  var isAllDropletsActive = function(list) {
-    var initialised;
+  var getActiveDropletCount = function(list) {
+    var initialisedCount = 0;
     for (var i in list) {
       initialised = list[i].status === 'active';
-      if (!initialised) {
-        break;
+      if (initialised) {
+        initialisedCount += 1;
       }
     }
-    return initialised;
+    return initialisedCount;
   };
 
   var getDroplets = function(idList, callback) {
+    if (!progressBar) {
+      console.log('\n');
+      progressBar = new ProgressBar('Initialising droplets [:bar] :current/:total :percent', {
+        complete: '=',
+        incomplete: ' ',
+        width: 20,
+        total: networkSize
+      });
+      progressBar.tick(0);
+    }
+
     var TempFunc = function(id) {
       this.run = function(cb) {
         digitalOcean.getDroplet(id, cb);
@@ -200,24 +282,28 @@ exports = module.exports = function(args) {
       for (var i in idList) {
         requests.push(new TempFunc(idList[i]));
       }
-      async.series(requests, function(err, droplets) {
+      async.parallel(requests, function(err, droplets) {
         if (err) {
           callback(err);
           return;
         }
         createdDroplets = droplets;
+        var activeDropletCount = getActiveDropletCount(createdDroplets);
+        var newActiveCount = activeDropletCount - progressBar.curr;
+        if (newActiveCount > 0) {
+          progressBar.tick(newActiveCount);
+        }
         if (createdDroplets.length === 0) {
           callback('Droplets could not be created');
-        } else if (!isAllDropletsActive(createdDroplets)) {
-          console.log('Droplets are not initialised yet.. Will check again in some time');
+        } else if (activeDropletCount < networkSize) {
           getDroplets(idList, callback);
         } else {
+          console.log('\n');
           callback(null);
         }
       });
     };
-    console.log('Waiting for droplets to initialise');
-    setTimeout(getDropletInfo, 1 * 60 * 1000);
+    setTimeout(getDropletInfo, 20 * 1000);
   };
 
   var getConnectionType = function(callback) {
@@ -424,44 +510,38 @@ exports = module.exports = function(args) {
           return callback(null);
         }
 
-        console.log("SCP Transfer failed.");
-        callback(err);
+        console.log("SCP Transfer failed. Error: " + err);
+        return callback(err);
       });
     } catch (e) {
-      console.log("SCP Transfer failed. " + e);
-      callback(e);
+      console.log("SCP Transfer failed. Exception: " + e);
+      return callback(e);
     }
   };
 
   var executeRemoteCommands = function(callback) {
-    var Handler = function(ssh, cmd) {
+    var Handler = function(sshOptions, cmd) {
       this.run = function(cb) {
-        console.log("Executing tmux commands on :: " + ssh.host);
-        ssh.exec(cmd, {
-          exit: function() {
-            console.log('tmux setup completed on :: ' + ssh.host);
-            return cb(null);
-          },
-          err: function(stderr) {
-            console.log(stderr);
-            return cb(stderr);
-          },
-          out: console.log.bind(console)
-        }).start();
+        console.log("Executing ssh commands on :: " + sshOptions.host);
+        sshConnect(sshOptions, function(err, ssh){
+          var child = sshExec({cmd: cmd, ssh: ssh});
+          child.on('exit', function(code){
+            return cb(code === 0 ? null : 'SSH Execution Failed for: ' + sshOptions.host);
+          });
+        });
       };
       return this.run;
     };
     var requests = [];
-    var ssh;
     for (var i in createdDroplets) {
-      ssh = new SSH({
+      var sshOptions = {
         host: createdDroplets[i].networks.v4[0].ip_address,
-        user: config.dropletUser,
-        pass: auth.getDopletUserPassword(),
-        timeout: 99999
-      });
-      requests.push(
-        new Handler(ssh, 'tmux new-session -d \"mv ~/settings.yml ~/.teamocil/;. ~/.profile;teamocil settings\"'));
+        username: config.dropletUser,
+        password: auth.getDopletUserPassword(),
+        readyTimeout: 99999
+      };
+      var cmd = 'tmux new-session -d \"mv ~/settings.yml ~/.teamocil/;. ~/.profile;teamocil settings\"';
+      requests.push(new Handler(sshOptions, cmd));
     }
     async.series(requests, function(err) {
       if (!err) {
@@ -476,11 +556,15 @@ exports = module.exports = function(args) {
 
   var printResult = function(callback) {
     console.log('\n');
+    var table = new Table({
+      head: ['Droplet Name', 'SSH Command'],
+      colWidths: [40, 120]
+    });
     for (var i in createdDroplets) {
-      console.log(createdDroplets[i].name +
-      '\nssh -o StrictHostKeyChecking=no -t ' + config.dropletUser + '@' + createdDroplets[i].networks.v4[0].ip_address +
-      ' \"tmux attach\"');
+      table.push([createdDroplets[i].name, 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -t ' +
+        config.dropletUser + '@' + createdDroplets[i].networks.v4[0].ip_address + ' \"tmux attach\"']);
     }
+    console.log(table.toString());
     callback(null);
   };
 
@@ -496,14 +580,13 @@ exports = module.exports = function(args) {
     libraryConfig = config.libraries[selectedLibraryKey];
     binaryName = (libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibraryRepoName) +
       BINARY_EXT;
-    binaryPath = config.workspace + '/' + selectedLibraryRepoName + '/target/release/' +
-      (libraryConfig.hasOwnProperty('example') ? 'examples' : '') + '/';
-    buildPath = config.workspace + '/' + selectedLibraryRepoName;
 
     waterfallTasks.push(
       validateUniqueNetwork,
       getDropletRegions,
+      getRepositoryLocation,
       clone,
+      getBuildType,
       build,
       stripBinary,
       getNetworkSize

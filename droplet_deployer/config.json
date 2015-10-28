@@ -35,7 +35,7 @@
   "beaconPort": 5484,
   "listeningPort": 5483,
   "dropletSize": "1gb",
-  "imageId": 14152289,
+  "imageId": 14153683,
   "imageRegion": "lon1",
   "sshKeys": [618734, 873713, 906915, 948546],
   "testMode": false
