@@ -23,7 +23,6 @@
     "progress": "^1.1.8",
     "request-json": "^0.5.3",
     "scp2": "^0.2.2",
-    "ssh2-connect": "0.0.7",
-    "ssh2-exec": "^0.3.1"
+    "ssh2": "^0.4.12"
   }
 }

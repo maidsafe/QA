@@ -9,8 +9,7 @@ exports = module.exports = function(args) {
   var utils = require('./common/utils');
   var config = require('./config.json');
   var auth = require('./common/auth');
-  var sshConnect = require('ssh2-connect');
-  var sshExec = require('ssh2-exec');
+  var sshClient = require('ssh2').Client;
   var ProgressBar = require('progress');
   var Table = require('cli-table');
   var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken(), config.testMode);
@@ -87,10 +86,9 @@ exports = module.exports = function(args) {
       return callback(null);
     }
 
-    // When clone option is chosen. clear complete workspace to prevent previous build cache's getting used
-    utils.deleteFolderRecursive(config.workspace);
-
     buildPath = config.workspace + '/' + selectedLibraryRepoName;
+    utils.deleteFolderRecursive(buildPath);
+
     console.log('Cloning Repository - ' + selectedLibraryRepoName);
     exec('git clone ' + libraryConfig.url + ' ' +
           buildPath + ' --depth 1', function(err) {
@@ -99,7 +97,7 @@ exports = module.exports = function(args) {
   };
 
   var build = function(callback) {
-    var targetPath = path.resolve(config.workspace + '/target-' + selectedLibraryKey);
+    var targetPath = path.resolve(config.workspace + '/target_' + selectedLibraryRepoName);
     var buildCommand = 'CARGO_TARGET_DIR=' + targetPath + ' cargo build';
     if (libraryConfig.hasOwnProperty('example')) {
       buildCommand += ' --example ' + libraryConfig['example'];
@@ -523,12 +521,21 @@ exports = module.exports = function(args) {
     var Handler = function(sshOptions, cmd) {
       this.run = function(cb) {
         console.log("Executing ssh commands on :: " + sshOptions.host);
-        sshConnect(sshOptions, function(err, ssh){
-          var child = sshExec({cmd: cmd, ssh: ssh});
-          child.on('exit', function(code){
-            return cb(code === 0 ? null : 'SSH Execution Failed for: ' + sshOptions.host);
+        var conn = new sshClient();
+        var errorMessage = 'SSH Execution Failed for: ' + sshOptions.host;
+        conn.on('ready', function () {
+          conn.exec(cmd, function (err, stream) {
+            if (err) {
+              return cb(errorMessage);
+            }
+            stream.on('close', function (code) {
+              conn.end();
+              return cb(code === 0 ? null : errorMessage);
+            });
           });
-        });
+        }).on('error', function () {
+          return cb(errorMessage);
+        }).connect(sshOptions);
       };
       return this.run;
     };
@@ -549,7 +556,7 @@ exports = module.exports = function(args) {
         return callback(null);
       }
 
-      console.log("Tmux command execution failed.");
+      console.log("SSH command execution failed.");
       callback(err);
     });
   };
@@ -558,7 +565,7 @@ exports = module.exports = function(args) {
     console.log('\n');
     var table = new Table({
       head: ['Droplet Name', 'SSH Command'],
-      colWidths: [40, 120]
+      colWidths: [40, 100]
     });
     for (var i in createdDroplets) {
       table.push([createdDroplets[i].name, 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -t ' +
