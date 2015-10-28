@@ -161,7 +161,7 @@ exports = module.exports = function(args) {
     var region;
     var TempFunc = function(name, region, size, image, keys) {
       this.run = function(cb) {
-		console.log("Creating droplet -", name);  
+		console.log("Creating droplet -", name);
         digitalOcean.createDroplet(name, region, size, image, keys, cb);
       };
       return this.run;
@@ -461,7 +461,7 @@ exports = module.exports = function(args) {
         timeout: 99999
       });
       requests.push(
-        new Handler(ssh, 'tmux new-session -d \"mv ~/settings.yml ~/.teamocil/;. ~/.bash_profile;teamocil settings\"'));
+        new Handler(ssh, 'tmux new-session -d \"mv ~/settings.yml ~/.teamocil/;. ~/.profile;teamocil settings\"'));
     }
     async.series(requests, function(err) {
       if (!err) {
