@@ -17,7 +17,7 @@ To avoid having to confirm each IP's identity, you can pass the args:
 
 Example usage:
 Copy the dir \"foo\" from local to remote IP's \"bar\" dir
-    ./${0##*/}  -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -r foo REMOTE:/some/remote/dir/bar
+    ./${0##*/} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -r foo REMOTE:/some/remote/dir/bar
 
 Copy the file \"log*.txt\" from remote IP to local folder
     ./${0##*/} REMOTE:log*.txt /some/local/dir

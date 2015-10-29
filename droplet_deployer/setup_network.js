@@ -547,7 +547,7 @@ exports = module.exports = function(args) {
         password: auth.getDopletUserPassword(),
         readyTimeout: 99999
       };
-      var cmd = 'tmux new-session -d \"mv ~/settings.yml ~/.teamocil/;. ~/.profile;teamocil settings\"';
+      var cmd = 'tmux new-session -d \"mv ~/settings.yml ~/.teamocil/;. ~/.bash_profile;teamocil settings\"';
       requests.push(new Handler(sshOptions, cmd));
     }
     async.series(requests, function(err) {
