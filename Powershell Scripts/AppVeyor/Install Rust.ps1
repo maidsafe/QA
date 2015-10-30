@@ -1,12 +1,16 @@
 # Determine the appropriate arch to install
 if ($env:PLATFORM -eq "x86") {
     $arch = "i686"
-}
-else {
+} else {
     $arch = "x86_64"
 }
 
-$rust_version = $env:RUST_VERSION
+if ($env:RUST_VERSION -eq "stable") {
+    $rust_version = "1.4.0"
+} else {
+    $rust_version = $env:RUST_VERSION
+}
+
 $rust_install = "rust-$rust_version-$arch-pc-windows-gnu.msi"
 
 # Download Rust installer
