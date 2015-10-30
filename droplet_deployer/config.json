@@ -4,9 +4,9 @@
   "workspace": "temp_job",
   "outFolder": "output",
   "outputIPListFile": "ip_list",
-  "minNetworkSize": 8,
+  "minNetworkSize": 1,
   "maxNetworkSize": 64,
-  "minSeedNodeSize": 3,
+  "minSeedNodeSize": 1,
   "maxSeedNodeSize": 6,
   "dropletUser": "qa",
   "remotePathToTransferFiles": "/home/qa/",
@@ -23,8 +23,8 @@
     },
     "Routing-1": {
       "url": "git@github.com:maidsafe/routing.git",
-      "example": "simple_key_value_store",
-      "tmuxCommands": ["./simple_key_value_store"]
+      "example": "key_value_store",
+      "tmuxCommands": ["./key_value_store --node"]
     },
     "Vault-1": {
       "url": "git@github.com:maidsafe/safe_vault.git",
