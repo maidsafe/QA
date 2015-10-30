@@ -15,7 +15,7 @@ $cargo_test = {
         $release_flag = "--release"
     }
 
-    cargo test $with_features $release_flag
+    cargo test $with_features $release_flag -- --nocapture
     $LASTEXITCODE > TestResult.txt
 }
 
@@ -50,11 +50,14 @@ while (($running_time -lt $timeout_ms) -and (-not $completed)) {
 
 if (-not $completed) {
     # Exit with non-zero value if the test timed out
+
+    # Kill job and retrieve and buffered output
+    Stop-Job $job
+    Receive-Job $job
+
     $timeout_seconds = $timeout_ms / 1000
     ""
     "Tests ran for longer than $timeout_seconds seconds, so have timed out."
-    # Kill job.
-    Remove-Job -force $job
     exit -2
 } else {
     # Exit with the return code of the test command
