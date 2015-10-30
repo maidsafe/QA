@@ -3,6 +3,10 @@
 ## Prerequisite
 
 [Nodejs](https://nodejs.org/en/download/) should be installed.
+
+OSX & Win: Use the installer from the above link.
+
+Linux: `sudo apt-get install nodejs npm && sudo ln -s 'which nodejs' /usr/bin/node`
  
 ## Setting up instruction
 
