@@ -32,26 +32,29 @@ if ($env:TimeoutSeconds) {
 
 # Loop until timed out or tests have completed
 $ErrorActionPreference = "Continue"
+$start_time = Get-Date
+$current_time = $start_time
 $completed = $false
-while (($running_time -lt $timeout_ms) -and (-not $completed)) {
+while ((($current_time - $start_time).TotalMilliseconds -lt $timeout_ms) -and (-not $completed)) {
     $sleep_ms = 100
     Start-Sleep -m $sleep_ms
-    $running_time += $sleep_ms
 
     # Display test's results so far
-    Receive-Job -Job $job
+    Receive-Job $job
 
     # Check if the tests have completed
     $running = $job | Where-Object { $_.State -match 'running' }
     if (-not $running) {
         $completed = $true
     }
+    $current_time = Get-Date
 }
 
 if (-not $completed) {
     # Exit with non-zero value if the test timed out
 
     # Kill job and retrieve and buffered output
+    Get-ChildItem "target\$env:CONFIGURATION" -Filter *.exe | Foreach-Object { Stop-Process -name $_.BaseName *>$null }
     Stop-Job $job
     Receive-Job $job
 
