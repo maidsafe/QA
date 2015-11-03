@@ -15,7 +15,7 @@ fi
 cd $HOME
 
 # Check to see if elfutils dir has been retrieved from cache
-ElfUtilsInstallPath=$HOME/elfutils-$ElfUtilsVersion
+ElfUtilsInstallPath=$HOME/elfutils/$ElfUtilsVersion
 Cores=$((hash nproc 2>/dev/null && nproc) || (hash sysctl 2>/dev/null && sysctl -n hw.ncpu) || echo 1)
 if [ ! -d "$ElfUtilsInstallPath/lib" ]; then
   # If not, build and install it

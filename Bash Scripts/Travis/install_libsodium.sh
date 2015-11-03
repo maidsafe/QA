@@ -13,20 +13,21 @@ if [ -z "$LibSodiumVersion" ]; then
 fi
 
 # Check to see if libsodium dir has been retrieved from cache
-if [ ! -d "$HOME/libsodium-$LibSodiumVersion/lib" ]; then
+if [ ! -d "$HOME/libsodium/$LibSodiumVersion/lib" ]; then
   # If not, build and install it
+  rm -rf "$HOME/libsodium"
   mkdir temp
   cd temp
   wget https://github.com/jedisct1/libsodium/releases/download/$LibSodiumVersion/libsodium-$LibSodiumVersion.tar.gz
   tar xfz libsodium-$LibSodiumVersion.tar.gz
   cd libsodium-$LibSodiumVersion
-  ./configure --prefix=$HOME/libsodium-$LibSodiumVersion --enable-shared=no --disable-pie
+  ./configure --prefix=$HOME/libsodium/$LibSodiumVersion --enable-shared=no --disable-pie
   Cores=$((hash nproc 2>/dev/null && nproc) || (hash sysctl 2>/dev/null && sysctl -n hw.ncpu) || echo 1)
   make check -j$Cores
   make install
   cd ../..
 else
-  echo 'Using cached libsodium directory.';
+  echo "Using cached libsodium directory (version $LibSodiumVersion)";
 fi
 
-export PKG_CONFIG_PATH=$HOME/libsodium-$LibSodiumVersion/lib/pkgconfig:$PKG_CONFIG_PATH
+export PKG_CONFIG_PATH=$HOME/libsodium/$LibSodiumVersion/lib/pkgconfig:$PKG_CONFIG_PATH
