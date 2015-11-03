@@ -9,7 +9,7 @@ trap 'exit' ERR
 
 # Set the elfutils version if it isn't already set
 if [ -z "$ElfUtilsVersion" ]; then
-  ElfUtilsVersion=0.163
+  ElfUtilsVersion=0.164
 fi
 
 cd $HOME

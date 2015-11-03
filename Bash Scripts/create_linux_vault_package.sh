@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export SODIUM_LIB_DIR=$HOME/libsodium-1.0.3/lib
+export SODIUM_LIB_DIR=$HOME/libsodium-1.0.6/lib
 
 # Stop the script if any command fails
 set -o errtrace
