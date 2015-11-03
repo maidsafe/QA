@@ -7,9 +7,9 @@ set -x
 set -o errtrace
 trap 'exit' ERR
 
-# Set the libsodium version to 1.0.3 if it isn't already set
+# Set the libsodium version to 1.0.6 if it isn't already set
 if [ -z "$LibSodiumVersion" ]; then
-  LibSodiumVersion=1.0.3
+  LibSodiumVersion=1.0.6
 fi
 
 # Check to see if libsodium dir has been retrieved from cache
