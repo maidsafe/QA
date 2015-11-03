@@ -19,6 +19,7 @@ ElfUtilsInstallPath=$HOME/elfutils/$ElfUtilsVersion
 Cores=$((hash nproc 2>/dev/null && nproc) || (hash sysctl 2>/dev/null && sysctl -n hw.ncpu) || echo 1)
 if [ ! -d "$ElfUtilsInstallPath/lib" ]; then
   # If not, build and install it
+  rm -rf $HOME/elfutils
   mkdir -p temp
   cd temp
   wget https://fedorahosted.org/releases/e/l/elfutils/$ElfUtilsVersion/elfutils-$ElfUtilsVersion.tar.bz2
@@ -28,7 +29,7 @@ if [ ! -d "$ElfUtilsInstallPath/lib" ]; then
   make check -j$Cores
   make install
 else
-  echo "Using cached elfutils directory."
+  echo "Using cached elfutils directory (version $ElfUtilsVersion)"
 fi
 export LD_LIBRARY_PATH=$ElfUtilsInstallPath/lib:$LD_LIBRARY_PATH
 
