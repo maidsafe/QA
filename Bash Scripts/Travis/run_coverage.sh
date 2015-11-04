@@ -7,35 +7,8 @@ set -x
 set -o errtrace
 trap 'exit' ERR
 
-# Set the elfutils version if it isn't already set
-if [ -z "$ElfUtilsVersion" ]; then
-  ElfUtilsVersion=0.164
-fi
-
-cd $HOME
-
-# Check to see if elfutils dir has been retrieved from cache
-ElfUtilsInstallPath=$HOME/elfutils/$ElfUtilsVersion
-Cores=$((hash nproc 2>/dev/null && nproc) || (hash sysctl 2>/dev/null && sysctl -n hw.ncpu) || echo 1)
-if [ ! -d "$ElfUtilsInstallPath/lib" ]; then
-  # If not, build and install it
-  rm -rf $HOME/elfutils
-  mkdir -p temp
-  cd temp
-  wget https://fedorahosted.org/releases/e/l/elfutils/$ElfUtilsVersion/elfutils-$ElfUtilsVersion.tar.bz2
-  tar jxf elfutils-$ElfUtilsVersion.tar.bz2
-  cd elfutils-$ElfUtilsVersion
-  ./configure --prefix=$ElfUtilsInstallPath
-  make check -j$Cores
-  make install
-else
-  echo "Using cached elfutils directory (version $ElfUtilsVersion)"
-fi
-export LD_LIBRARY_PATH=$ElfUtilsInstallPath/lib:$LD_LIBRARY_PATH
-
-cd $HOME
-
 # Build and install kcov (which is fast and not versioned, so there's little point in caching it)
+cd $HOME
 mkdir -p temp
 cd temp
 wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
