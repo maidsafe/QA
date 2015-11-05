@@ -10,7 +10,12 @@ Linux only (DigitalOcean only supports Linux)
 
 [Nodejs](https://nodejs.org/en/download/) should be installed.
 
-Linux: `sudo apt-get install nodejs npm && sudo ln -s 'which nodejs' /usr/bin/node`
+Linux: 
+
+```
+sudo apt-get install nodejs npm
+sudo ln -s `which nodejs` /usr/bin/node
+```
  
 ## Setting up
 
