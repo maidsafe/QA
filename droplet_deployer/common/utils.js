@@ -1,13 +1,14 @@
 var Utils = function() {
   var fs = require('fs');
   var path = require('path');
+  var self = this;
 
-  this.deleteFolderRecursive = function(path) {
-    if(fs.existsSync(path)) {
-      fs.readdirSync(path).forEach(function(file, index){
-        var curPath = path + "/" + file;
-        if(fs.lstatSync(curPath).isDirectory()) { // recurse
-          deleteFolderRecursive(curPath);
+  self.deleteFolderRecursive = function(path) {
+    if (fs.existsSync(path)) {
+      fs.readdirSync(path).forEach(function(file) {
+        var curPath = path + '/' + file;
+        if (fs.lstatSync(curPath).isDirectory()) { // recurse
+          self.deleteFolderRecursive(curPath);
         } else { // delete file
           fs.unlinkSync(curPath);
         }
@@ -16,7 +17,7 @@ var Utils = function() {
     }
   };
 
-  this.postQuestion = function (question, callback, allowEmpty) {
+  self.postQuestion = function(question, callback, allowEmpty) {
     var stdin = process.stdin;
     var stdout = process.stdout;
 
@@ -28,7 +29,7 @@ var Utils = function() {
 
       if (!result && !allowEmpty) {
         // Ask again
-        postQuestion(question, callback);
+        self.postQuestion(question, callback);
       } else {
         stdin.pause();
         console.log('\n');
@@ -37,11 +38,11 @@ var Utils = function() {
     });
   };
 
-  this.getArguments = function() {
+  self.getArguments = function() {
     var options = {};
     var temp;
-    process.argv.forEach(function (val) {
-      if(val.indexOf('--') === 0) {
+    process.argv.forEach(function(val) {
+      if (val.indexOf('--') === 0) {
         temp = val.split('=');
         options[temp[0].replace(/--/, '')] = temp[1] || '';
       }
@@ -49,7 +50,7 @@ var Utils = function() {
     return options;
   };
 
-  this.getValidPath = function(message, callback) {
+  self.getValidPath = function(message, callback) {
     var stdin = process.stdin;
     var stdout = process.stdout;
 
@@ -64,12 +65,12 @@ var Utils = function() {
         return callback(result);
       } else {
         stdout.write('Invalid Path\n\n');
-        getValidPath(message, callback);
+        self.getValidPath(message, callback);
       }
     });
   };
 
-  return this;
+  return self;
 };
 
-exports = module.exports = Utils();
+exports = module.exports = new Utils();
