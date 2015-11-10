@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Show expanded commands while running
-set -x
+# Show executed commands (not expanded) while running
+set -v
 
 # Stop the script if any command fails
 set -o errtrace
@@ -28,15 +28,10 @@ if [[ $CommitMessage == versionchangeto* ]]; then
   cp -rf ../target/doc/* $Version
   cp -rf ../target/doc/* latest
   git tag $Version -a -m "Version $Version"
-  
-  # Hide expanded commands while running
-  set +x
   git push -q https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG} --tags
-  set -x
 fi
 mkdir -p master
 cp -rf ../target/doc/* master
 cd ..
 ghp-import -n docs-stage
-set +x
 git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
