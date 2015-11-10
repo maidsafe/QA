@@ -19,6 +19,7 @@ git config --global user.email qa@maidsafe.net
 git config --global user.name MaidSafe-QA
 git clone https://github.com/${TRAVIS_REPO_SLUG}.git --branch gh-pages --single-branch docs-stage
 cd docs-stage
+echo "<meta http-equiv=refresh content=0;url=master/${ProjectName}/index.html>" > index.html
 rm -rf .git*
 if [[ $CommitMessage == versionchangeto* ]]; then
   Version=${CommitMessage##*to}
@@ -27,10 +28,15 @@ if [[ $CommitMessage == versionchangeto* ]]; then
   cp -rf ../target/doc/* $Version
   cp -rf ../target/doc/* latest
   git tag $Version -a -m "Version $Version"
+  
+  # Hide expanded commands while running
+  set +x
   git push -q https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG} --tags
+  set -x
 fi
 mkdir -p master
 cp -rf ../target/doc/* master
 cd ..
 ghp-import -n docs-stage
+set +x
 git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
