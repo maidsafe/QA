@@ -28,10 +28,11 @@ if [[ $CommitMessage == versionchangeto* ]]; then
   cp -rf ../target/doc/* $Version
   cp -rf ../target/doc/* latest
   git tag $Version -a -m "Version $Version"
-  git push -q https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG} --tags
+  # Pipe output to null if the following command fails to thereby not print expanded variables
+  git push -q https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG} --tags > /dev/null 2>&1
 fi
 mkdir -p master
 cp -rf ../target/doc/* master
 cd ..
 ghp-import -n docs-stage
-git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
+git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages > /dev/null 2>&1
