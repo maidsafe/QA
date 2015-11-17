@@ -1,12 +1,5 @@
 #!/bin/bash
 
-# Show expanded commands while running
-set -x
-
-# Stop the script if any command fails
-set -o errtrace
-trap 'exit' ERR
-
 # Set the libsodium version if it isn't already set
 if [ -z "$LibSodiumVersion" ]; then
   LibSodiumVersion=1.0.6
