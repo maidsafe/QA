@@ -6,7 +6,7 @@ if [%1]==[] (
     call set Version=%%%1%%
 )
 set PATH=%Version%\bin;%PATH%
-set RUST_BACKTRACE=1
-rustc --version
+set RUST_BACKTRACE=0
+rustc -Vv
 echo RUST_BACKTRACE=%RUST_BACKTRACE%
 echo RUST_TEST_THREADS=%RUST_TEST_THREADS%
