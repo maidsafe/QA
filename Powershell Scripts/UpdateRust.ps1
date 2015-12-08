@@ -97,7 +97,8 @@ Function Install ($channel) {
     Remove-Item $install_log -ErrorAction SilentlyContinue
 
     "Downloading $msi"
-    $client.DownloadFile("http://static.rust-lang.org/dist/rust-$channel-x86_64-pc-windows-gnu.msi", "$msi")
+    #$client.DownloadFile("http://static.rust-lang.org/dist/rust-$channel-x86_64-pc-windows-gnu.msi", "$msi")
+    [io.file]::WriteAllBytes("$msi",(Invoke-WebRequest -URI "http://static.rust-lang.org/dist/rust-$channel-x86_64-pc-windows-gnu.msi" -Headers @{"Accept-Encoding"="gzip, deflate"}).content)
 
     "Validating $msi_name"
     $sha256 = (Get-FileHash $msi -Algorithm SHA256 | Format-Wide -Property Hash -AutoSize) | Out-String
