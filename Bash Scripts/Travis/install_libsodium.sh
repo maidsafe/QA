@@ -2,7 +2,7 @@
 
 # Set the libsodium version if it isn't already set
 if [ -z "$LibSodiumVersion" ]; then
-  LibSodiumVersion=1.0.6
+  LibSodiumVersion=1.0.8
 fi
 
 # Check to see if libsodium dir has been retrieved from cache
