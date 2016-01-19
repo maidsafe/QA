@@ -24,5 +24,12 @@
     "request-json": "^0.5.3",
     "scp2": "^0.2.2",
     "ssh2": "^0.4.12"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "jshint-stylish": "~0.4.0",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-jscs": "^1.5.0",
+    "load-grunt-tasks": "~0.6.0"
   }
 }
