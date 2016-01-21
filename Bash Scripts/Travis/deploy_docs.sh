@@ -53,6 +53,7 @@ if [[ $CommitMessage == versionchangeto* ]]; then
 fi
 
 git add .
-git commit -m"Updated documentation."
-# Pipe output to null if the following command fails to thereby not print expanded variables
-git push https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages > /dev/null 2>&1
+if git commit -m"Updated documentation."; then
+  # Pipe output to null if the following command fails to thereby not print expanded variables
+  git push https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages > /dev/null 2>&1
+fi
