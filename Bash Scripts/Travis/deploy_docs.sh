@@ -20,7 +20,7 @@ git config --global user.name MaidSafe-QA
 
 # If gh-pages branch already exists, clone it to pull down the existing version-specific docs.
 # Otherwise just create an empty folder, since this is the first push to gh-pages.
-if [ git rev-parse --verify origin/gh-pages > /dev/null 2>&1 ]; then
+if git rev-parse --verify origin/gh-pages > /dev/null 2>&1; then
   git clone https://github.com/${TRAVIS_REPO_SLUG}.git --branch gh-pages --single-branch docs-stage
 else
   mkdir -p docs-stage
