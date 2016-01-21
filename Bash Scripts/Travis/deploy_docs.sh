@@ -11,38 +11,48 @@ ProjectName=${TRAVIS_REPO_SLUG##*/};
 
 cd $TRAVIS_BUILD_DIR
 cargo doc
-
 echo "<meta http-equiv=refresh content=0;url=${ProjectName}/index.html>" > target/doc/index.html
-pip install --user ghp-import
+rm -rf /tmp/doc
+mv target/doc /tmp/doc
+
 CommitMessage=$(git log -1 | tr '[:upper:]' '[:lower:]' | grep "version change to " | tr -d ' ')
 git config --global user.email qa@maidsafe.net
 git config --global user.name MaidSafe-QA
 
-# If gh-pages branch already exists, clone it to pull down the existing version-specific docs.
-# Otherwise just create an empty folder, since this is the first push to gh-pages.
+# Since we did a shallow clone which only clones the master branch, ensure we can fetch the gh-pages
+# branch if it exists
 git remote set-branches origin '*'
 git fetch
+
+# Checkout to the gh-pages branch if it already exists, otherwise clear out the repo and prepare
+# for the first push to gh-pages.
 if git rev-parse --verify origin/gh-pages > /dev/null 2>&1; then
-  git clone https://github.com/${TRAVIS_REPO_SLUG}.git --branch gh-pages --single-branch docs-stage
+  git checkout gh-pages
+  git clean -df
 else
-  mkdir -p docs-stage
+  rm -rf ./*
+  rm ./.**&
+  git checkout --orphan gh-pages
+  git rm -rf .
+  echo "<meta http-equiv=refresh content=0;url=master/${ProjectName}/index.html>" > index.html
+  touch .nojekyll
 fi
 
-cd docs-stage
-echo "<meta http-equiv=refresh content=0;url=master/${ProjectName}/index.html>" > index.html
-rm -rf .git*
+rm -rf master
+cp -rf /tmp/doc master
+
 if [[ $CommitMessage == versionchangeto* ]]; then
   Version=${CommitMessage##*to}
-  mkdir -p $Version
-  mkdir -p latest
-  cp -rf ../target/doc/* $Version
-  cp -rf ../target/doc/* latest
-  git tag $Version -a -m "Version $Version"
+  rm -rf $Version
+  cp -rf /tmp/doc $Version
+  rm -rf latest
+  cp -rf /tmp/doc latest
+  git tag $Version -am "Version $Version"
   # Pipe output to null if the following command fails to thereby not print expanded variables
-  git push -q https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG} --tags > /dev/null 2>&1
+  git push https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG} --tags > /dev/null 2>&1
 fi
-mkdir -p master
-cp -rf ../target/doc/* master
-cd ..
-ghp-import -n docs-stage
-git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages > /dev/null 2>&1
+
+git add .
+git commit -m"Updated documentation."
+# Pipe output to null if the following command fails to thereby not print expanded variables
+git push https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages > /dev/null 2>&1
