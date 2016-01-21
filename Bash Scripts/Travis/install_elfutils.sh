@@ -14,7 +14,7 @@ if [[ $TRAVIS_OS_NAME = linux ]] && [[ ${TRAVIS_JOB_NUMBER##*.} -eq 1 ]] &&
 
   # Set the elfutils version if it isn't already set
   if [ -z "$ElfUtilsVersion" ]; then
-    ElfUtilsVersion=0.165
+    ElfUtilsVersion=0.164
   fi
 
   # Check to see if elfutils dir has been retrieved from cache
