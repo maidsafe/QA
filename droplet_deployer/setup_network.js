@@ -1,3 +1,6 @@
+/* jshint maxstatements:100 */
+/*jshint camelcase: false */
+// jscs:disable requireCamelCaseOrUpperCaseIdentifiers
 exports = module.exports = function(args) {
   var fs = require('fs');
   var os = require('os');
@@ -9,7 +12,7 @@ exports = module.exports = function(args) {
   var utils = require('./common/utils');
   var config = require('./config.json');
   var auth = require('./common/auth');
-  var sshClient = require('ssh2').Client;
+  var SshClient = require('ssh2').Client;
   var ProgressBar = require('progress');
   var Table = require('cli-table');
   var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken(), config.testMode);
@@ -39,8 +42,8 @@ exports = module.exports = function(args) {
   }[os.type().toLowerCase()];
 
   var getRepositoryLocation = function(callback) {
-    var message = "Please select the source repository location\n---------\n" +
-      "1. GitHub master branch\n2. Local repository\n";
+    var message = 'Please select the source repository location\n---------\n' +
+      '1. GitHub master branch\n2. Local repository\n';
 
     var onRepositoryLocationSelected = function(option) {
       option = parseInt(option);
@@ -54,7 +57,7 @@ exports = module.exports = function(args) {
       } else if (option === 2) {
         utils.getValidPath('Please enter the path to ' + selectedLibraryRepoName, validPathChosen);
       } else {
-        console.log("Invalid option selected");
+        console.log('Invalid option selected');
         getRepositoryLocation(callback);
       }
     };
@@ -63,7 +66,7 @@ exports = module.exports = function(args) {
   };
 
   var getBuildType = function(callback) {
-    var message = "\nPlease select the required build type\n1. Debug.\n2. Release.\n";
+    var message = '\nPlease select the required build type\n1. Debug.\n2. Release.\n';
     var onBuildTypeSelected = function(option) {
       option = parseInt(option);
       if (option === 1) {
@@ -72,7 +75,7 @@ exports = module.exports = function(args) {
         buildFlags = ' --release';
         return callback(null);
       } else {
-        console.log("Invalid option selected");
+        console.log('Invalid option selected');
         getBuildType(callback);
       }
     };
@@ -100,7 +103,7 @@ exports = module.exports = function(args) {
     var targetPath = path.resolve(config.workspace + '/target_' + selectedLibraryRepoName);
     var buildCommand = 'CARGO_TARGET_DIR=' + targetPath + ' cargo build';
     if (libraryConfig.hasOwnProperty('example')) {
-      buildCommand += ' --example ' + libraryConfig['example'];
+      buildCommand += ' --example ' + libraryConfig.example;
     }
     buildCommand += buildFlags ? buildFlags : '';
     console.log('Building Repository - ' + selectedLibraryRepoName);
@@ -127,7 +130,7 @@ exports = module.exports = function(args) {
     utils.postQuestion('Please enter the size of the network between ' +
       config.minNetworkSize + '-' + config.maxNetworkSize, function(size) {
       size = parseInt(size);
-      if(isNaN(size) || size < config.minNetworkSize || size > config.maxNetworkSize) {
+      if (isNaN(size) || size < config.minNetworkSize || size > config.maxNetworkSize) {
         console.log('Invalid input');
         getNetworkSize(callback);
       } else {
@@ -146,7 +149,7 @@ exports = module.exports = function(args) {
     utils.postQuestion('Please enter the size of the seed nodes between ' +
       config.minSeedNodeSize + '-' + config.maxSeedNodeSize, function(size) {
       size = parseInt(size);
-      if(isNaN(size) || size < config.minSeedNodeSize || size > config.maxSeedNodeSize) {
+      if (isNaN(size) || size < config.minSeedNodeSize || size > config.maxSeedNodeSize) {
         console.log('Invalid input');
         getSeedNodeSize(callback);
       } else {
@@ -157,7 +160,7 @@ exports = module.exports = function(args) {
   };
 
   var getNetworkType = function(callback) {
-    //utils.postQuestion('Please select the type of network \n1. Spread \n2. Concentrated', function(type) {
+    // utils.postQuestion('Please select the type of network \n1. Spread \n2. Concentrated', function(type) {
     //  type = parseInt(type);
     //  if(isNaN(type) || type < 0 || type > 2) {
     //    console.log('Invalid input');
@@ -165,7 +168,7 @@ exports = module.exports = function(args) {
     //  } else {
     //    callback(null, type === 1);
     //  }
-    //});
+    // });
     // TODO Passing hard coded false for indicating concentrated network - to be enhanced
     callback(null, false);
   };
@@ -202,9 +205,9 @@ exports = module.exports = function(args) {
 
   var selectDropletRegion = function(spreadNetwork, callback) {
     if (config.hasOwnProperty('imageRegion') && config.imageRegion) {
-      callback(null, [config.imageRegion]);
+      callback(null, [ config.imageRegion ]);
     } else {
-      callback("imageRegion not specified in config");
+      callback('imageRegion not specified in config');
     }
     // TODO - To be enhanced
     /*if (spreadNetwork) {
@@ -230,16 +233,16 @@ exports = module.exports = function(args) {
     var region;
     var TempFunc = function(name, region, size, image, keys) {
       this.run = function(cb) {
-        console.log("Creating droplet -", name);
+        console.log('Creating droplet -', name);
         digitalOcean.createDroplet(name, region, size, image, keys, cb);
       };
       return this.run;
     };
     var requests = [];
-    console.log("Creating droplets...");
+    console.log('Creating droplets...');
     for (var i = 0; i < networkSize; i++) {
       region = selectedRegions[i % selectedRegions.length];
-      name = auth.getUserName() + '-' + selectedLibraryKey + '-TN-' + region + '-' + (i+1);
+      name = auth.getUserName() + '-' + selectedLibraryKey + '-TN-' + region + '-' + (i + 1);
       requests.push(new TempFunc(name, region, config.dropletSize, config.imageId, config.sshKeys));
     }
     async.series(requests, callback);
@@ -247,10 +250,13 @@ exports = module.exports = function(args) {
 
   var getActiveDropletCount = function(list) {
     var initialisedCount = 0;
+    var initialised;
     for (var i in list) {
-      initialised = list[i].status === 'active';
-      if (initialised) {
-        initialisedCount += 1;
+      if (list[i]) {
+        initialised = list[i].status === 'active';
+        if (initialised) {
+          initialisedCount += 1;
+        }
       }
     }
     return initialisedCount;
@@ -278,7 +284,9 @@ exports = module.exports = function(args) {
     var getDropletInfo = function() {
       var requests = [];
       for (var i in idList) {
-        requests.push(new TempFunc(idList[i]));
+        if (idList[i]) {
+          requests.push(new TempFunc(idList[i]));
+        }
       }
       async.parallel(requests, function(err, droplets) {
         if (err) {
@@ -308,7 +316,7 @@ exports = module.exports = function(args) {
     utils.postQuestion('Please select the Connection type for generating the config file \n' +
     '1. Tcp & Utp (Both) \n2. Tcp \n3. Utp', function(type) {
       type = parseInt(type);
-      if(isNaN(type) || type < 0 || type > 3) {
+      if (isNaN(type) || type < 0 || type > 3) {
         console.log('Invalid input');
         getConnectionType(callback);
       } else {
@@ -361,13 +369,13 @@ exports = module.exports = function(args) {
     var ip;
     for (var i = 0; i < seedNodeSize; i++) {
       ip = createdDroplets[i].networks.v4[0].ip_address;
-      if (connectionType != 3) {
+      if (connectionType !== 3) {
         endPoints.push({
           protocol: 'tcp',
           address: ip + ':' + stdListeningPort
         });
       }
-      if (connectionType != 2) {
+      if (connectionType !== 2) {
         endPoints.push({
           protocol: 'utp',
           address: ip + ':' + stdListeningPort
@@ -383,7 +391,9 @@ exports = module.exports = function(args) {
     var reporterEndpoints = [];
     var reporterListeningPort = listeningPort | config.listeningPort;
     for (var i in createdDroplets) {
-      reporterEndpoints.push(createdDroplets[i].networks.v4[0].ip_address + ':' + reporterListeningPort);
+      if (createdDroplets[i]) {
+        reporterEndpoints.push(createdDroplets[i].networks.v4[0].ip_address + ':' + reporterListeningPort);
+      }
     }
 
     utils.deleteFolderRecursive(config.outFolder);
@@ -391,13 +401,16 @@ exports = module.exports = function(args) {
     fs.mkdirSync(config.outFolder + '/scp');
 
     for (var j in reporterEndpoints) {
-      var currentIP = reporterEndpoints[j].split(':')[0];
-      configFile['msg_to_send'] = 'Message from ' + currentIP;
-      configFile['listening_port'] = reporterListeningPort;
-      configFile['ips'] = reporterEndpoints;
-      configFile['output_report_path'] = '/home/qa/reporter_log_' + currentIP + '.json';
-      fs.mkdirSync(config.outFolder + '/scp/' + currentIP);
-      fs.writeFileSync(config.outFolder + '/scp/' + currentIP + '/reporter.json', JSON.stringify(configFile, null, 2));
+      if (reporterEndpoints[j]) {
+        var currentIP = reporterEndpoints[j].split(':')[0];
+        configFile.msg_to_send = 'Message from ' + currentIP;
+        configFile.listening_port = reporterListeningPort;
+        configFile.ips = reporterEndpoints;
+        configFile.output_report_path = '/home/qa/reporter_log_' + currentIP + '.json';
+        fs.mkdirSync(config.outFolder + '/scp/' + currentIP);
+        fs.writeFileSync(config.outFolder + '/scp/' + currentIP + '/reporter.json',
+            JSON.stringify(configFile, null, 2));
+      }
     }
     callback(null);
   };
@@ -406,18 +419,18 @@ exports = module.exports = function(args) {
     var configFile;
     configFile = require('./std_config_template.json');
     var stdListeningPort = listeningPort | config.listeningPort;
-    if (connectionType != 3) {
-      configFile['tcp_listening_port'] = stdListeningPort;
+    if (connectionType !== 3) {
+      configFile.tcp_listening_port = stdListeningPort;
     }
-    if (connectionType != 2) {
-      configFile['utp_listening_port'] = stdListeningPort;
+    if (connectionType !== 2) {
+      configFile.utp_listening_port = stdListeningPort;
     }
-    configFile['beacon_port'] = beaconPort | config.beaconPort;
-    configFile['hard_coded_contacts'] = generateEndPoints(stdListeningPort);
+    configFile.beacon_port = beaconPort | config.beaconPort;
+    configFile.hard_coded_contacts = generateEndPoints(stdListeningPort);
     utils.deleteFolderRecursive(config.outFolder);
     fs.mkdirSync(config.outFolder);
     fs.mkdirSync(config.outFolder + '/scp');
-    var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibraryRepoName;
+    var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig.example : selectedLibraryRepoName;
     fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.crust.config', JSON.stringify(configFile, null, 2));
     callback(null);
   };
@@ -425,8 +438,10 @@ exports = module.exports = function(args) {
   var generateIPListFile = function(callback) {
     var spaceDelimittedFile = '';
     for (var i in createdDroplets) {
-      spaceDelimittedFile += spaceDelimittedFile ? ' ' : '';
-      spaceDelimittedFile += createdDroplets[i].networks.v4[0].ip_address;
+      if (createdDroplets[i]) {
+        spaceDelimittedFile += spaceDelimittedFile ? ' ' : '';
+        spaceDelimittedFile += createdDroplets[i].networks.v4[0].ip_address;
+      }
     }
     fs.writeFileSync(config.outFolder + '/' + config.outputIPListFile, spaceDelimittedFile);
     callback(null);
@@ -440,12 +455,16 @@ exports = module.exports = function(args) {
     var generatedFile = buff.toString();
     var commands = libraryConfig[TMUX_CMDS_KEY];
     for (var i in commands) {
-      generatedFile += '\n        - ' + commands[i];
+      if (commands[i]) {
+        generatedFile += '\n        - ' + commands[i];
+      }
     }
     if (binaryName === 'reporter') {
       for (var j in createdDroplets) {
-        fs.writeFileSync(config.outFolder + '/scp/' + createdDroplets[j].networks.v4[0].ip_address + '/settings.yml',
-                         generatedFile);
+        if (createdDroplets[i]) {
+          fs.writeFileSync(config.outFolder + '/scp/' + createdDroplets[j].networks.v4[0].ip_address + '/settings.yml',
+              generatedFile);
+        }
       }
     } else {
       fs.writeFileSync(config.outFolder + '/scp/settings.yml', generatedFile);
@@ -456,12 +475,14 @@ exports = module.exports = function(args) {
   var copyBinary = function(callback) {
     if (binaryName === 'reporter') {
       for (var i in createdDroplets) {
-        fse.copySync(binaryPath + binaryName,
-                     config.outFolder + '/scp/' + createdDroplets[i].networks.v4[0].ip_address  + "/" + binaryName);
+        if (createdDroplets[i]) {
+          fse.copySync(binaryPath + binaryName,
+              config.outFolder + '/scp/' + createdDroplets[i].networks.v4[0].ip_address  + '/' + binaryName);
+        }
       }
       callback(null);
     } else {
-      fse.copy(binaryPath + binaryName, config.outFolder + '/scp/' + binaryName, function (err) {
+      fse.copy(binaryPath + binaryName, config.outFolder + '/scp/' + binaryName, function(err) {
         if (err) {
           callback(err);
           return;
@@ -479,7 +500,7 @@ exports = module.exports = function(args) {
     }
     var TransferFiles = function(ip, sourcePath, destPath) {
       this.run = function(cb) {
-        console.log("Transferring files to :: " + ip);
+        console.log('Transferring files to :: ' + ip);
         scpClient.scp(sourcePath, {
           host: ip,
           username: config.dropletUser,
@@ -493,26 +514,28 @@ exports = module.exports = function(args) {
     };
     var requests = [];
     for (var i in createdDroplets) {
-      var ip = createdDroplets[i].networks.v4[0].ip_address;
-      var scpPathSuffix = ((binaryName === 'reporter') ? ip + '/' : '');
+      if (createdDroplets[i]) {
+        var ip = createdDroplets[i].networks.v4[0].ip_address;
+        var scpPathSuffix = ((binaryName === 'reporter') ? ip + '/' : '');
 
-      // Config Files and Binary
-      var sourcePath = config.outFolder + '/scp/' + scpPathSuffix;
-      var destPath = config.remotePathToTransferFiles;
-      requests.push(new TransferFiles(ip, sourcePath, destPath));
+        // Config Files and Binary
+        var sourcePath = config.outFolder + '/scp/' + scpPathSuffix;
+        var destPath = config.remotePathToTransferFiles;
+        requests.push(new TransferFiles(ip, sourcePath, destPath));
+      }
     }
     try {
       async.series(requests, function(err) {
         if (!err) {
-          console.log('SCP Transfer completed successfully.\n')
+          console.log('SCP Transfer completed successfully.\n');
           return callback(null);
         }
 
-        console.log("SCP Transfer failed. Error: " + err);
+        console.log('SCP Transfer failed. Error: ' + err);
         return callback(err);
       });
     } catch (e) {
-      console.log("SCP Transfer failed. Exception: " + e);
+      console.log('SCP Transfer failed. Exception: ' + e);
       return callback(e);
     }
   };
@@ -520,20 +543,20 @@ exports = module.exports = function(args) {
   var executeRemoteCommands = function(callback) {
     var Handler = function(sshOptions, cmd) {
       this.run = function(cb) {
-        console.log("Executing ssh commands on :: " + sshOptions.host);
-        var conn = new sshClient();
+        console.log('Executing ssh commands on :: ' + sshOptions.host);
+        var conn = new SshClient();
         var errorMessage = 'SSH Execution Failed for: ' + sshOptions.host;
-        conn.on('ready', function () {
-          conn.exec(cmd, function (err, stream) {
+        conn.on('ready', function() {
+          conn.exec(cmd, function(err, stream) {
             if (err) {
               return cb(errorMessage);
             }
-            stream.on('close', function (code) {
+            stream.on('close', function(code) {
               conn.end();
               return cb(code === 0 ? null : errorMessage);
             });
           });
-        }).on('error', function () {
+        }).on('error', function() {
           return cb(errorMessage);
         }).connect(sshOptions);
       };
@@ -541,14 +564,16 @@ exports = module.exports = function(args) {
     };
     var requests = [];
     for (var i in createdDroplets) {
-      var sshOptions = {
-        host: createdDroplets[i].networks.v4[0].ip_address,
-        username: config.dropletUser,
-        password: auth.getDopletUserPassword(),
-        readyTimeout: 99999
-      };
-      var cmd = 'tmux new-session -d \"mv ~/settings.yml ~/.teamocil/;. ~/.bash_profile;teamocil settings\"';
-      requests.push(new Handler(sshOptions, cmd));
+      if (createdDroplets[i]) {
+        var sshOptions = {
+          host: createdDroplets[i].networks.v4[0].ip_address,
+          username: config.dropletUser,
+          password: auth.getDopletUserPassword(),
+          readyTimeout: 99999
+        };
+        var cmd = 'tmux new-session -d \"mv ~/settings.yml ~/.teamocil/;. ~/.bash_profile;teamocil settings\"';
+        requests.push(new Handler(sshOptions, cmd));
+      }
     }
     async.series(requests, function(err) {
       if (!err) {
@@ -556,7 +581,7 @@ exports = module.exports = function(args) {
         return callback(null);
       }
 
-      console.log("SSH command execution failed.");
+      console.log('SSH command execution failed.');
       callback(err);
     });
   };
@@ -564,12 +589,14 @@ exports = module.exports = function(args) {
   var printResult = function(callback) {
     console.log('\n');
     var table = new Table({
-      head: ['Droplet Name', 'SSH Command'],
-      colWidths: [40, 100]
+      head: [ 'Droplet Name', 'SSH Command' ],
+      colWidths: [ 40, 100 ]
     });
     for (var i in createdDroplets) {
-      table.push([createdDroplets[i].name, 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -t ' +
-        config.dropletUser + '@' + createdDroplets[i].networks.v4[0].ip_address + ' \"tmux attach\"']);
+      if (createdDroplets[i]) {
+        table.push([ createdDroplets[i].name, 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -t ' +
+        config.dropletUser + '@' + createdDroplets[i].networks.v4[0].ip_address + ' \"tmux attach\"' ]);
+      }
     }
     console.log(table.toString());
     callback(null);
@@ -579,13 +606,15 @@ exports = module.exports = function(args) {
     var libraries = [];
     var waterfallTasks = [];
     for (var key in config.libraries) {
-      libraries.push(key);
+      if (key) {
+        libraries.push(key);
+      }
     }
     selectedLibraryKey = libraries[option - 1];
     var temp = config.libraries[selectedLibraryKey].url.split('/');
     selectedLibraryRepoName = temp[temp.length - 1].split('.')[0];
     libraryConfig = config.libraries[selectedLibraryKey];
-    binaryName = (libraryConfig.hasOwnProperty('example') ? libraryConfig['example'] : selectedLibraryRepoName) +
+    binaryName = (libraryConfig.hasOwnProperty('example') ? libraryConfig.example : selectedLibraryRepoName) +
       BINARY_EXT;
 
     waterfallTasks.push(
@@ -633,8 +662,6 @@ exports = module.exports = function(args) {
       executeRemoteCommands,
       printResult
     );
-
-
     async.waterfall(waterfallTasks, function(err) {
       if (err) {
         console.error(err);
@@ -648,11 +675,13 @@ exports = module.exports = function(args) {
     var keys = [];
     option = parseInt(option);
     var optionNotValid = function() {
-      console.log("Invalid option selected");
+      console.log('Invalid option selected');
       showSetupOptions();
     };
     for (var key in config.libraries) {
-      keys.push(key);
+      if (key) {
+        keys.push(key);
+      }
     }
     if (isNaN(option) || option < 0 || option > keys.length) {
       optionNotValid();
@@ -662,17 +691,20 @@ exports = module.exports = function(args) {
   };
 
   var showSetupOptions = function() {
-    var libOptions = "\n--------- \n";
+    var libOptions = '\n--------- \n';
     var i = 1;
     var isExample;
     for (var key in config.libraries) {
-      isExample = config.libraries[key].hasOwnProperty('example');
-      libOptions +=  (i + '. ' + key.replace(/-.*/g, "") + ' ' + (isExample ? 'Example' : 'Binary')
-        + ' - ' + (isExample ? config.libraries[key]['example'] : config.libraries[key]['binary']) + '\n');
-      i++;
+      if (config.libraries[key]) {
+        isExample = config.libraries[key].hasOwnProperty('example');
+        libOptions +=  (i + '. ' + key.replace(/-.*/g, '') + ' ' + (isExample ? 'Example' : 'Binary') +
+        ' - ' + (isExample ? config.libraries[key].example : config.libraries[key].binary) + '\n');
+        i++;
+      }
     }
 
-    utils.postQuestion('Please choose the entry for which the network is to be set up: ' + libOptions, onSetupOptionSelected);
+    utils.postQuestion('Please choose the entry for which the network is to be set up: ' +
+        libOptions, onSetupOptionSelected);
   };
 
   showSetupOptions();

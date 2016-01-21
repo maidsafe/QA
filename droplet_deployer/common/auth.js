@@ -1,3 +1,5 @@
+/*jshint camelcase: false */
+// jscs:disable requireCamelCaseOrUpperCaseIdentifiers
 /**
  * Provides API related to auth validation
  * Cleanup of cloned repos
@@ -15,25 +17,26 @@ var AuthManager = function() {
   var credentials = {};
 
   var getGitUser = function(callback) {
-    exec("git config --global user.name", function(err, stdout) {
+    exec('git config --global user.name', function(err, stdout) {
       if (err) {
         callback(err);
         return;
       }
-      userName = stdout.trim().replace(/[\W_]+/g, "-");
-      userName ? callback(null) : callback('git config --global user.name is not configured');
+      userName = stdout.trim().replace(/[\W_]+/g, '-');
+      return userName ? callback(null) : callback('git config --global user.name is not configured');
     });
   };
 
   var cloneRepo = function(callback) {
-     exec('git clone ' + config.auth_repo + ' ' + config.workspace + '/' + CLONED_REPO_NAME + ' --depth 1', function(err) {
-       if (err) {
-         callback(err);
-         return;
-       }
-       credentials = require('../' + config.workspace + '/' + CLONED_REPO_NAME + '/credentials');
-       callback(null);
-     });
+    exec('git clone ' + config.auth_repo + ' ' + config.workspace + '/' +
+      CLONED_REPO_NAME + ' --depth 1', function(err) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      credentials = require('../' + config.workspace + '/' + CLONED_REPO_NAME + '/credentials');
+      callback(null);
+    });
   };
 
   var deleteRepo = function(callback) {
@@ -47,7 +50,7 @@ var AuthManager = function() {
       deleteRepo,
       getGitUser,
       cloneRepo,
-      deleteRepo,
+      deleteRepo
     ], callback);
   };
 
@@ -66,4 +69,4 @@ var AuthManager = function() {
   return this;
 };
 
-exports = module.exports = AuthManager();
+exports = module.exports = new AuthManager();

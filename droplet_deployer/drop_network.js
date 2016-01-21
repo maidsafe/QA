@@ -27,11 +27,9 @@ exports = module.exports = function() {
   var deleteDroplets = function(callback) {
     var requests = [];
     var Executor = function(id) {
-
       this.run = function(cb) {
         digitalOcean.deleteDroplet(id, cb);
       };
-
       return this.run;
     };
 
@@ -41,13 +39,14 @@ exports = module.exports = function() {
     }
 
     for (var i in droplets) {
-      requests.push(new Executor(droplets[i].id));
+      if (droplets[i]) {
+        requests.push(new Executor(droplets[i].id));
+      }
     }
 
     async.series(requests, function(err) {
-      err ? callback('Failed to delete some droplet(s)') : callback(null);
+      return err ? callback('Failed to delete some droplet(s)') : callback(null);
     });
-
   };
 
   var dropNetwork = function() {
@@ -63,7 +62,9 @@ exports = module.exports = function() {
     index = parseInt(index);
     var keys = [];
     for (var key in config.libraries) {
-      keys.push(key);
+      if (key) {
+        keys.push(key);
+      }
     }
     if (isNaN(index) || index < 1 || index > keys.length) {
       console.log('Invalid option');
@@ -75,16 +76,18 @@ exports = module.exports = function() {
   };
 
   var showMainMenu = function() {
-    var libOptions = "\n--------- \n";
-    var i =1;
+    var libOptions = '\n--------- \n';
+    var i = 1;
     var isExample;
     for (var key in config.libraries) {
-      isExample = config.libraries[key].hasOwnProperty('example');
-      libOptions +=  (i + '. ' + key.replace(/-.*/g, "") + ' ' + (isExample ? 'Example' : 'Binary')
-      + ' - ' + (isExample ? config.libraries[key]['example'] : config.libraries[key]['binary']) + '\n');
-      i++;
+      if (config.libraries[key]) {
+        isExample = config.libraries[key].hasOwnProperty('example');
+        libOptions +=  (i + '. ' + key.replace(/-.*/g, '') + ' ' + (isExample ? 'Example' : 'Binary') +
+        ' - ' + (isExample ? config.libraries[key].example : config.libraries[key].binary) + '\n');
+        i++;
+      }
     }
-    util.postQuestion('Select the library to drop the network for:' + libOptions, onLibrarySelected)
+    util.postQuestion('Select the library to drop the network for:' + libOptions, onLibrarySelected);
   };
 
   showMainMenu();
