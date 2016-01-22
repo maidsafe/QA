@@ -6,37 +6,31 @@ New github repo created? Then this document should walk you through the QA steps
 
 Sync account and find the new repository you want to add and flick the switch to on.
 
-![Sync Account](https://github.com/rossmuir/QA/blob/master/Documentation/images/1.png?raw=true)
-
+![Sync Account](https://github.com/maidsafe/QA/blob/master/Documentation/images/1.png?raw=true)
 
 **Add repository to Appveyor**
 
 Login and select  `+ NEW PROJECT`
 
-
-
+![Appveyor](https://github.com/maidsafe/QA/blob/master/Documentation/images/2.png?raw=true)
 
 Then select the repository you would like to add
 
-
-
-
-
-
+![Appveyor select repo](https://github.com/maidsafe/QA/blob/master/Documentation/images/3.png?raw=true)
 
 Add appveyor.yml and .travis.yml scripts to new repository
 
 Fork the new repository from MaidSafe and locally clone the new repository and then from another MaidSafe github repository > https://github.com/maidsafe, copy and add the `appveyor.yml` and `.travis.yml` YAML files to the root of the new repository. The `.travis.yml` will require minor tweaking (more of which in the following steps) especially creating and updating the secure token, which is used to upload rust documentation. If you follow the bash scripts in the `.travis.yml` you will see this in > https://github.com/maidsafe/QA/blob/master/Bash%20Scripts/Travis/deploy_docs.sh
 
-
 **Give Travis permissions**
 
 Log into github as the MaidSafe-QA github user and go to settings and select Personal access tokens. Now click `Generate new token` and create a new “Travis Deploy Token - <new repo name>”
 
-
+![Travis permissions](https://github.com/maidsafe/QA/blob/master/Documentation/images/4.png?raw=true)
 
 and limit scopes to match the screen below
 
+![Limit scopes](https://github.com/maidsafe/QA/blob/master/Documentation/images/5.png?raw=true)
 
 Once you have clicked on Generate token copy the output as you will not see it again.
 
@@ -48,17 +42,13 @@ Run this, where `$YOUR_TOKEN` is the one we copied in the previous step.
 
 `travis encrypt GH_TOKEN=$YOUR_TOKEN`
 
-
 This will create a new -secure: …. line in the `.travis.yml`.
 
 Edit the `.travis.yml` file you added to the new repo and replace the line `-secure:` with the output you have just generated - example of what this looks like is below.
 
-
-
+![travis.yml](https://github.com/maidsafe/QA/blob/master/Documentation/images/6.png?raw=true)
 
 If you are not at this point going to update the repositories `README.md` then you can push all your local changes upstream and issue a PR to add them to main repository.
-
-
 
 **Webhooks - Add Highfive**
 
@@ -67,22 +57,23 @@ Login with new privs and go to *> Settings > Webhooks & services > Add webhook*
 
 Payload URL = http://visualiser.maidsafe.net/cgi-bin/highfive/newpr.py
 
+![Webhooks](https://github.com/maidsafe/QA/blob/master/Documentation/images/7.png?raw=true)
 
-
-
+![Manage webhook](https://github.com/maidsafe/QA/blob/master/Documentation/images/8.png?raw=true)
 
 **Highfive backend configuration**
 
 SSH (details in private assets github repository) to the droplet hosting Highfive
 
+![Droplet](https://github.com/maidsafe/QA/blob/master/Documentation/images/9.png?raw=true)
 
 Navigate to `cd /usr/lib/cgi-bin/highfive/configs/`
 
-
+![ls](https://github.com/maidsafe/QA/blob/master/Documentation/images/10.png?raw=true)
 
 create a new `<repository_name>.json` file (copy an existing .json file)
 
-
+![json edit](https://github.com/maidsafe/QA/blob/master/Documentation/images/11.png?raw=true)
 
 Edit the new `<repository_name>.json` file and update the maintainers names.
 The important section is “groups” - note that entries & file names are case sensitive.
@@ -92,31 +83,21 @@ Save file.
 
 Login with github account and click `RE-SYNC REPOS`
 
-
-
+![coveralls](https://github.com/maidsafe/QA/blob/master/Documentation/images/12.png?raw=true)
 
 Click `ADD REPOS`
 
+![add repo](https://github.com/maidsafe/QA/blob/master/Documentation/images/13.png?raw=true)
 
 Flick the switch on your new repository
 
+![flick the switch](https://github.com/maidsafe/QA/blob/master/Documentation/images/14.png?raw=true)
 
+**Update new repo `README.md`**
 
-
-
-
-
-
-
-
-
-
-Update new repo `README.md`
-
-
+![repo example](https://github.com/maidsafe/QA/blob/master/Documentation/images/15.png?raw=true)
 
 Above is a screenshot and below is a template, best take the markdown from another repository and edit to fit the purposes of the new repository.
-
 
 # < repository_name >
 
@@ -147,19 +128,11 @@ Reliable p2p network connections in Rust with NAT traversal. One of the most nee
 One niggle worth noting for Appveyor badges that has caught a few folk out of you need to grab the markdown for master badge - this can be found on the Appveyor site in the new repo page under: *Settings > Badges* and is the 6th or last entry on the page see below.
 This is the one that needs pasted into the project's `README.md` and the QA `README.md`
 
-
-
-
-
-
-
-
-
+![Appveyor badge](https://github.com/maidsafe/QA/blob/master/Documentation/images/16.png?raw=true)
 
 **Update QA readme.md**
 
 Finally add a new entry to https://github.com/maidsafe/QA/blob/master/README.md
-
 
 Push upstream all your local repo changes and issue a PR
 
@@ -171,7 +144,6 @@ Checklist to see if everything is ok:
 * Do all the links and badges go to the correct places?
 * On a successful merge to master did Travis create and publish the documentation?
 * Did Coverage run?
-
 
 
 **REMEMBER: to ask one of the Github administrators to revoke the temp privileges**
