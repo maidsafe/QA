@@ -6,7 +6,7 @@ New github repo created? Then this document should walk you through the QA steps
 
 Sync account and find the new repository you want to add and flick the switch to on.
 
-![Sync Account](/images/1.png?raw=true)
+![Sync Account](https://github.com/rossmuir/QA/blob/master/Documentation/images/1.png?raw=true)
 
 
 **Add repository to Appveyor**
