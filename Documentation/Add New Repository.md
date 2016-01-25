@@ -46,7 +46,7 @@ Once you have clicked on "Generate token", copy the output as you will not see i
 
 Run this, where `<YOUR_TOKEN>` is the one we copied in the previous step.
 
-`travis encrypt GH_TOKEN=<YOUR_TOKEN>`
+`travis encrypt -r maidsafe/<new_repo> GH_TOKEN=<YOUR_TOKEN>`
 
 Edit the `.travis.yml` file you added to the new repo and replace the long string in the line `-secure:` with the output you have just generated - example of what this looks like is below (the string has been shortened in this image).
 
