@@ -10,6 +10,8 @@ While logged into GitHub under your own account, fork the new repo and clone it 
 
 Log out of your own account and log back in as the MaidSafe-QA user.
 
+*At this stage you need to request temporary GitHub "Admin" privileges from Fraser, Viv or David.*
+
 ### Add Repository to Travis
 
 Login to [Travis](https://travis-ci.org/), sync account, find the new repository you want to add and flick the switch to on.
@@ -56,9 +58,7 @@ If you are not at this point going to update the repository's `README.md` then y
 
 ### Webhooks - Add Highfive
 
-For this step you need to request temporary GitHub admin privileges from Fraser, Viv or David, or ask one of them to perform this step.  If you want to stay logged in as the MaidSafe-QA user, ask them to grant the elevated privileges to the "Bots" team.
-
-With the elevated privileges in GitHub, go to the project's settings (the `maidsafe` fork - not your fork) *> Settings > Webhooks & services > Add webhook*
+Go to the project's settings (the `maidsafe` fork - not your fork) *> Settings > Webhooks & services > Add webhook*
 
 The Payload URL is
 
@@ -70,7 +70,6 @@ http://visualiser.maidsafe.net/cgi-bin/highfive/newpr.py
 
 ![Manage webhook](Images/08.png)
 
-As soon as this step is complete, if you were given elevated privileges, reduce them back to "Write".  (Ensure `Owners` have "Admin" privileges and `Bots` and `Developers` have "Write" privileges.)
 
 ### Highfive Backend Configuration
 
@@ -144,6 +143,12 @@ This is the one that needs pasted into the project's `README.md` and the QA `REA
 ### Update QA readme.md
 
 Finally add a new entry to https://github.com/maidsafe/QA/blob/master/README.md and issue a PR for this.
+
+### Revoke Github "Admin" from MaidSafe-QA user
+
+Once everything is complete, we need to revoke elevated privileges and reduce them back to "Write".
+
+*Ensure `Owners` have "Admin" privileges and `Bots` and `Developers` have "Write" privileges.*
 
 ### Checklist to see if everything is ok:
 
