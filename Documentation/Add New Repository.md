@@ -140,6 +140,17 @@ This is the one that needs pasted into the project's `README.md` and the QA `REA
 
 ![AppVeyor badge](Images/16.png)
 
+### Switch - Build only in .travis.yml / appveyor.yml is present - ON
+
+Log into Travis and go to repository *> settings > general settings* and switch `ON` *Build only if .travis.yml is present* setting.
+
+![Travis yml present switch](Images/17.png)
+
+Log into Appveyor and go to repository *> settings > general* and tick the *Skip branches without appveyor.yml* and *Rolling builds* check boxes.
+
+![Appveyor yml present switch](Images/18.png)
+
+
 ### Update QA readme.md
 
 Finally add a new entry to https://github.com/maidsafe/QA/blob/master/README.md and issue a PR for this.
