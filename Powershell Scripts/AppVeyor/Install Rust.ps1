@@ -6,7 +6,7 @@ if ($env:PLATFORM -eq "x86") {
 }
 
 if ($env:RUST_VERSION -eq "stable") {
-    $rust_version = "1.5.0"
+    $rust_version = "1.6.0"
 } else {
     $rust_version = $env:RUST_VERSION
 }
