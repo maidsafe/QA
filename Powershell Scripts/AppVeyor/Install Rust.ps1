@@ -5,22 +5,22 @@ if ($env:PLATFORM -eq "x86") {
     $arch = "x86_64"
 }
 
-if ($env:RUST_VERSION -eq "stable") {
-    $rust_version = "1.6.0"
-} else {
-    $rust_version = $env:RUST_VERSION
-}
-
-$rust_install = "rust-$rust_version-$arch-pc-windows-gnu.msi"
-
 # Download Rust installer
-Start-FileDownload "https://static.rust-lang.org/dist/$rust_install" -FileName $rust_install
+$url = "https://github.com/Diggsey/multirust-rs-binaries/raw/master/$arch-pc-windows-gnu/multirust-rs.exe"
+$installer = $env:TEMP + "\multirust-rs.exe"
+(New-Object System.Net.WebClient).DownloadFile($url, $installer)
 
-# Install Rust
-Start-Process -FilePath msiexec -ArgumentList /i, $rust_install, /quiet, INSTALLDIR="C:\Rust" -Wait
+# Install MultiRust
+$input_file = $env:TEMP + "\input.txt"
+Set-Content $input_file "y`r`ny`r`n"
+Start-Process $installer -Wait -NoNewWindow -RedirectStandardInput $input_file
 
-# Add Rust to path
-$env:Path = "C:\Rust\bin;" + $env:Path
+# Add MultiRust to path
+$env:Path = $env:LOCALAPPDATA + "\.multirust\bin;" + $env:Path
+
+# Set the requested channel and install nightly
+multirust update nightly
+multirust default $env:RUST_VERSION
 
 "Rust version:"
 ""

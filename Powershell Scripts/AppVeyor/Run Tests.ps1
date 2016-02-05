@@ -1,6 +1,8 @@
 # Exit the script if building fails
 $ErrorActionPreference = "Stop"
 
+cd $env:APPVEYOR_BUILD_FOLDER
+
 # Prepare test script
 $cargo_test = {
     cd $env:APPVEYOR_BUILD_FOLDER
@@ -16,7 +18,7 @@ $cargo_test = {
     }
 
     cargo test $with_features $release_flag -- --nocapture
-    $LASTEXITCODE > TestResult.txt
+    $LASTEXITCODE > ($env:TEMP + "\TestResult.txt")
 }
 
 # Run the test script
@@ -61,9 +63,15 @@ if (-not $completed) {
     $timeout_seconds = $timeout_ms / 1000
     ""
     "Tests ran for longer than $timeout_seconds seconds, so have timed out."
-    exit -2
+    $test_result = -2
 } else {
-    # Exit with the return code of the test command
-    $test_result = Get-Content TestResult.txt
-    exit $test_result
+    # Retrieve the return code of the test command, so we can return it later
+    $test_result = Get-Content ($env:TEMP + "\TestResult.txt")
 }
+
+# Run Clippy, but don't fail overall if Clippy fails.
+""
+"Running Clippy."
+multirust run nightly cargo test --no-run --features clippy
+
+exit $test_result
