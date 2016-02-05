@@ -140,7 +140,7 @@ This is the one that needs pasted into the project's `README.md` and the QA `REA
 
 ![AppVeyor badge](Images/16.png)
 
-### Switch - Build only in .travis.yml / appveyor.yml is present - ON
+### Switch On "Build only if .travis.yml / appveyor.yml is present"
 
 Log into Travis and go to repository *> settings > general settings* and switch `ON` *Build only if .travis.yml is present* setting.
 
