@@ -9,7 +9,7 @@ trap 'exit' ERR
 
 # We only need elfutils to run coverage, and this only happens if it's a pull request to 'master'
 # and only on the first job number in the Travis matrix.  This should be a Linux run.
-if [[ $TRAVIS_OS_NAME = linux ]] && [[ ${TRAVIS_JOB_NUMBER##*.} -eq 1 ]] &&
+if [[ $TRAVIS_RUST_VERSION = stable ]] && [[ $TRAVIS_OS_NAME = linux ]] && [[ ${TRAVIS_JOB_NUMBER##*.} -eq 1 ]] &&
    [[ $TRAVIS_BRANCH = master ]] && [[ $TRAVIS_PULL_REQUEST = false ]]; then
 
   # Set the elfutils version if it isn't already set

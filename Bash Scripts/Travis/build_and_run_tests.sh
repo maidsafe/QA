@@ -7,10 +7,18 @@ set -x
 set -o errtrace
 trap 'exit' ERR
 
-if [ ! -z "$Features" ]; then
-  WithFeatures=" --features $Features"
-fi
-
 cd $TRAVIS_BUILD_DIR
-cargo build --release --verbose $WithFeatures
-cargo test --release $WithFeatures
+
+if [[ $TRAVIS_RUST_VERSION = nightly ]]; then
+  # Don't make a Clippy failure result in overall failure for now
+  cargo test --no-run --features clippy || true
+  if [ ! -z "$Features" ]; then
+    cargo test --no-run --features clippy $Features || true
+  fi
+else
+  if [ ! -z "$Features" ]; then
+    WithFeatures=" --features $Features"
+  fi
+  cargo build --release --verbose $WithFeatures
+  cargo test --release $WithFeatures
+fi
