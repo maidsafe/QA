@@ -16,6 +16,7 @@ exports = module.exports = function(args) {
   var ProgressBar = require('progress');
   var Table = require('cli-table');
   var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken(), config.testMode);
+  var sleep = require('sleep');
 
   var ADVANCED_ARG = 'advanced';
   var TMUX_CMDS_KEY = 'tmuxCommands';
@@ -32,7 +33,6 @@ exports = module.exports = function(args) {
   var dropletRegions;
   var createdDroplets;
   var connectionType;
-  var beaconPort;
   var listeningPort;
   var progressBar;
 
@@ -326,25 +326,6 @@ exports = module.exports = function(args) {
     });
   };
 
-  var getBeaconPort = function(callback) {
-    if (!args.hasOwnProperty(ADVANCED_ARG)) {
-      callback(null);
-      return;
-    }
-    utils.postQuestion('Please enter the Beacon port (Default:' + config.beaconPort + ')', function(port) {
-      if (port !== '') {
-        port = parseInt(port);
-        if (isNaN(port)) {
-          console.log('Invalid input');
-          getBeaconPort(callback);
-          return;
-        }
-      }
-      beaconPort = port ? port : config.beaconPort;
-      callback(null);
-    }, true);
-  };
-
   var getListeningPort = function(callback) {
     if (!args.hasOwnProperty(ADVANCED_ARG)) {
       callback(null);
@@ -369,18 +350,11 @@ exports = module.exports = function(args) {
     var ip;
     for (var i = 0; i < seedNodeSize; i++) {
       ip = createdDroplets[i].networks.v4[0].ip_address;
-      if (connectionType !== 3) {
-        endPoints.push({
-          protocol: 'tcp',
-          address: ip + ':' + stdListeningPort
-        });
-      }
-      if (connectionType !== 2) {
-        endPoints.push({
-          protocol: 'utp',
-          address: ip + ':' + stdListeningPort
-        });
-      }
+      endPoints.push({
+        tcp_acceptors: connectionType !== 3 ? [ ip + ':' + stdListeningPort ] : '[]',
+        utp_custom_listeners: connectionType !== 2 ? [ ip + ':' + stdListeningPort ] : '[]',
+        mapper_servers: []
+      });
     }
     return endPoints;
   };
@@ -420,12 +394,11 @@ exports = module.exports = function(args) {
     configFile = require('./std_config_template.json');
     var stdListeningPort = listeningPort | config.listeningPort;
     if (connectionType !== 3) {
-      configFile.tcp_listening_port = stdListeningPort;
+      configFile.tcp_acceptor_port = stdListeningPort;
     }
     if (connectionType !== 2) {
-      configFile.utp_listening_port = stdListeningPort;
+      configFile.utp_acceptor_port = stdListeningPort;
     }
-    configFile.beacon_port = beaconPort | config.beaconPort;
     configFile.hard_coded_contacts = generateEndPoints(stdListeningPort);
     utils.deleteFolderRecursive(config.outFolder);
     fs.mkdirSync(config.outFolder);
@@ -504,7 +477,7 @@ exports = module.exports = function(args) {
         scpClient.scp(sourcePath, {
           host: ip,
           username: config.dropletUser,
-          password: auth.getDopletUserPassword(),
+          password: auth.getDropletUserPassword(),
           path: destPath,
           readyTimeout: 99999
         }, cb);
@@ -553,6 +526,8 @@ exports = module.exports = function(args) {
             }
             stream.on('close', function(code) {
               conn.end();
+              console.log('Commands Executed. Waiting 5 seconds...');
+              sleep.sleep(5);
               return cb(code === 0 ? null : errorMessage);
             });
           });
@@ -568,7 +543,7 @@ exports = module.exports = function(args) {
         var sshOptions = {
           host: createdDroplets[i].networks.v4[0].ip_address,
           username: config.dropletUser,
-          password: auth.getDopletUserPassword(),
+          password: auth.getDropletUserPassword(),
           readyTimeout: 99999
         };
         var cmd = 'tmux new-session -d \"mv ~/settings.yml ~/.teamocil/;. ~/.bash_profile;teamocil settings\"';
@@ -631,8 +606,7 @@ exports = module.exports = function(args) {
     if (binaryName !== 'reporter') {
       waterfallTasks.push(
         getSeedNodeSize,
-        getConnectionType,
-        getBeaconPort
+        getConnectionType
       );
     }
 

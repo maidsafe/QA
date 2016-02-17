@@ -24,7 +24,7 @@
     "Routing-1": {
       "url": "git@github.com:maidsafe/routing.git",
       "example": "key_value_store",
-      "tmuxCommands": ["./key_value_store --node"]
+      "tmuxCommands": ["RUST_LOG=routing,key_value=trace ./key_value_store --node"]
     },
     "Vault-1": {
       "url": "git@github.com:maidsafe/safe_vault.git",
@@ -32,7 +32,6 @@
       "tmuxCommands": ["./safe_vault"]
     }
   },
-  "beaconPort": 5484,
   "listeningPort": 5483,
   "dropletSize": "1gb",
   "imageId": 15309933,
