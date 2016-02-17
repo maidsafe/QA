@@ -351,8 +351,8 @@ exports = module.exports = function(args) {
     for (var i = 0; i < seedNodeSize; i++) {
       ip = createdDroplets[i].networks.v4[0].ip_address;
       endPoints.push({
-        tcp_acceptors: connectionType !== 3 ? [ ip + ':' + stdListeningPort ] : '[]',
-        utp_custom_listeners: connectionType !== 2 ? [ ip + ':' + stdListeningPort ] : '[]',
+        tcp_acceptors: connectionType !== 3 ? [ ip + ':' + stdListeningPort ] : [],
+        utp_custom_listeners: connectionType !== 2 ? [ ip + ':' + stdListeningPort ] : [],
         mapper_servers: []
       });
     }
