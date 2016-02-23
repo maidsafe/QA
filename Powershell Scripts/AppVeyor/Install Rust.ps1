@@ -19,7 +19,7 @@ Start-Process $installer -Wait -NoNewWindow -RedirectStandardInput $input_file
 $env:Path = $env:LOCALAPPDATA + "\.multirust\bin;" + $env:Path
 
 # Set the requested channel and install nightly
-multirust update nightly
+# multirust update nightly
 multirust default $env:RUST_VERSION
 
 "Rust version:"
