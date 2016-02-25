@@ -19,6 +19,6 @@ else
   if [ ! -z "$Features" ]; then
     WithFeatures=" --features $Features"
   fi
-  cargo build --release --verbose $WithFeatures
-  cargo test --release $WithFeatures
+  RUST_BACKTRACE=1 cargo build --release --verbose $WithFeatures
+  RUST_BACKTRACE=1 cargo test --release $WithFeatures
 fi

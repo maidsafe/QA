@@ -70,8 +70,8 @@ if (-not $completed) {
 }
 
 # Run Clippy, but don't fail overall if Clippy fails.
-""
-"Running Clippy."
-multirust run nightly cargo test --no-run --features clippy
+# ""
+# "Running Clippy."
+# multirust run nightly cargo test --no-run --features clippy
 
 exit $test_result
