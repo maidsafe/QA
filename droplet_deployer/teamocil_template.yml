@@ -1,4 +1,9 @@
 windows:
+  - name: deployer_log
+    root: ~
+    focus: true
+    panes:
+      - sleep 10 && tail -f Node.log
   - name: deployer_pane
     root: ~
     panes:

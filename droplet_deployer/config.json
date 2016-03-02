@@ -5,7 +5,7 @@
   "outFolder": "output",
   "outputIPListFile": "ip_list",
   "minNetworkSize": 1,
-  "maxNetworkSize": 64,
+  "maxNetworkSize": 100,
   "minSeedNodeSize": 1,
   "maxSeedNodeSize": 6,
   "dropletUser": "qa",
@@ -14,22 +14,22 @@
     "CRUST-1": {
       "url": "git@github.com:maidsafe/crust.git",
       "example": "crust_peer",
-      "tmuxCommands": ["./crust_peer"]
+      "tmuxCommands": ["./crust_peer > Node.log 2>&1"]
     },
     "CRUST-2": {
       "url": "git@github.com:maidsafe/crust.git",
       "example": "reporter",
-      "tmuxCommands": ["./reporter reporter.json"]
+      "tmuxCommands": ["./reporter reporter.json > Node.log 2>&1"]
     },
     "Routing-1": {
       "url": "git@github.com:maidsafe/routing.git",
       "example": "key_value_store",
-      "tmuxCommands": ["RUST_LOG=routing,key_value=trace ./key_value_store --node"]
+      "tmuxCommands": ["RUST_LOG=routing,key_value=trace ./key_value_store --node > Node.log 2>&1"]
     },
     "Vault-1": {
       "url": "git@github.com:maidsafe/safe_vault.git",
       "binary": "safe_vault",
-      "tmuxCommands": ["./safe_vault"]
+      "tmuxCommands": ["RUST_LOG=crust,routing,safe_vault=trace ./safe_vault > Node.log 2>&1"]
     }
   },
   "listeningPort": 5483,

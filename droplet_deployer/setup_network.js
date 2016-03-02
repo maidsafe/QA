@@ -141,7 +141,7 @@ exports = module.exports = function(args) {
   };
 
   var getSeedNodeSize = function(callback) {
-    if (binaryName === 'crust_peer') {
+    if (binaryName === 'crust_peer' || binaryName === 'reporter' ) {
       seedNodeSize = networkSize;
       return callback(null);
     }
@@ -353,7 +353,8 @@ exports = module.exports = function(args) {
       endPoints.push({
         tcp_acceptors: connectionType !== 3 ? [ ip + ':' + stdListeningPort ] : [],
         utp_custom_listeners: connectionType !== 2 ? [ ip + ':' + stdListeningPort ] : [],
-        mapper_servers: []
+        udp_mapper_servers: [],
+        tcp_mapper_servers: []
       });
     }
     return endPoints;
@@ -362,28 +363,17 @@ exports = module.exports = function(args) {
   var generateReporterConfigFiles = function(callback) {
     var configFile;
     configFile = require('./reporter_config_template.json');
-    var reporterEndpoints = [];
-    var reporterListeningPort = listeningPort | config.listeningPort;
+
     for (var i in createdDroplets) {
       if (createdDroplets[i]) {
-        reporterEndpoints.push(createdDroplets[i].networks.v4[0].ip_address + ':' + reporterListeningPort);
-      }
-    }
-
-    utils.deleteFolderRecursive(config.outFolder);
-    fs.mkdirSync(config.outFolder);
-    fs.mkdirSync(config.outFolder + '/scp');
-
-    for (var j in reporterEndpoints) {
-      if (reporterEndpoints[j]) {
-        var currentIP = reporterEndpoints[j].split(':')[0];
+        var currentIP = createdDroplets[i].networks.v4[0].ip_address;
         configFile.msg_to_send = 'Message from ' + currentIP;
-        configFile.listening_port = reporterListeningPort;
-        configFile.ips = reporterEndpoints;
         configFile.output_report_path = '/home/qa/reporter_log_' + currentIP + '.json';
         fs.mkdirSync(config.outFolder + '/scp/' + currentIP);
         fs.writeFileSync(config.outFolder + '/scp/' + currentIP + '/reporter.json',
-            JSON.stringify(configFile, null, 2));
+          JSON.stringify(configFile, null, 2));
+        fse.copySync(config.outFolder + '/scp/reporter.crust.config',
+          config.outFolder + '/scp/' + currentIP + '/reporter.crust.config');
       }
     }
     callback(null);
@@ -526,8 +516,10 @@ exports = module.exports = function(args) {
             }
             stream.on('close', function(code) {
               conn.end();
-              console.log('Commands Executed. Waiting 5 seconds...');
-              sleep.sleep(5);
+              if (binaryName !== 'reporter') {
+                console.log('Commands Executed. Waiting 20 seconds...');
+                sleep.sleep(20);
+              }
               return cb(code === 0 ? null : errorMessage);
             });
           });
@@ -600,29 +592,21 @@ exports = module.exports = function(args) {
       getBuildType,
       build,
       stripBinary,
-      getNetworkSize
+      getNetworkSize,
+      getSeedNodeSize
     );
 
-    if (binaryName !== 'reporter') {
-      waterfallTasks.push(
-        getSeedNodeSize,
-        getConnectionType
-      );
-    }
-
     waterfallTasks.push(
+      getConnectionType,
       getListeningPort,
       getNetworkType,
       selectDropletRegion,
       createDroplets,
-      getDroplets
+      getDroplets,
+      generateStdConfigFile
     );
 
-    if (binaryName !== 'reporter') {
-      waterfallTasks.push(
-        generateStdConfigFile
-      );
-    } else {
+    if (binaryName === 'reporter') {
       waterfallTasks.push(
         generateReporterConfigFiles
       );

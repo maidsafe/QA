@@ -2,5 +2,6 @@
   "hard_coded_contacts": [],
   "tcp_acceptor_port": null,
   "utp_acceptor_port": null,
-  "mapper_servers": []
+  "udp_mapper_servers": [],
+  "tcp_mapper_servers": []
 }
