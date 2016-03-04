@@ -16,6 +16,7 @@ exports = module.exports = function(args) {
   var ProgressBar = require('progress');
   var Table = require('cli-table');
   var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken(), config.testMode);
+  var sleep = require('sleep');
 
   var ADVANCED_ARG = 'advanced';
   var TMUX_CMDS_KEY = 'tmuxCommands';
@@ -32,7 +33,6 @@ exports = module.exports = function(args) {
   var dropletRegions;
   var createdDroplets;
   var connectionType;
-  var beaconPort;
   var listeningPort;
   var progressBar;
 
@@ -141,7 +141,7 @@ exports = module.exports = function(args) {
   };
 
   var getSeedNodeSize = function(callback) {
-    if (binaryName === 'crust_peer') {
+    if (binaryName === 'crust_peer' || binaryName === 'reporter' ) {
       seedNodeSize = networkSize;
       return callback(null);
     }
@@ -326,25 +326,6 @@ exports = module.exports = function(args) {
     });
   };
 
-  var getBeaconPort = function(callback) {
-    if (!args.hasOwnProperty(ADVANCED_ARG)) {
-      callback(null);
-      return;
-    }
-    utils.postQuestion('Please enter the Beacon port (Default:' + config.beaconPort + ')', function(port) {
-      if (port !== '') {
-        port = parseInt(port);
-        if (isNaN(port)) {
-          console.log('Invalid input');
-          getBeaconPort(callback);
-          return;
-        }
-      }
-      beaconPort = port ? port : config.beaconPort;
-      callback(null);
-    }, true);
-  };
-
   var getListeningPort = function(callback) {
     if (!args.hasOwnProperty(ADVANCED_ARG)) {
       callback(null);
@@ -369,18 +350,12 @@ exports = module.exports = function(args) {
     var ip;
     for (var i = 0; i < seedNodeSize; i++) {
       ip = createdDroplets[i].networks.v4[0].ip_address;
-      if (connectionType !== 3) {
-        endPoints.push({
-          protocol: 'tcp',
-          address: ip + ':' + stdListeningPort
-        });
-      }
-      if (connectionType !== 2) {
-        endPoints.push({
-          protocol: 'utp',
-          address: ip + ':' + stdListeningPort
-        });
-      }
+      endPoints.push({
+        tcp_acceptors: connectionType !== 3 ? [ ip + ':' + stdListeningPort ] : [],
+        utp_custom_listeners: connectionType !== 2 ? [ ip + ':' + stdListeningPort ] : [],
+        udp_mapper_servers: [],
+        tcp_mapper_servers: []
+      });
     }
     return endPoints;
   };
@@ -388,28 +363,17 @@ exports = module.exports = function(args) {
   var generateReporterConfigFiles = function(callback) {
     var configFile;
     configFile = require('./reporter_config_template.json');
-    var reporterEndpoints = [];
-    var reporterListeningPort = listeningPort | config.listeningPort;
+
     for (var i in createdDroplets) {
       if (createdDroplets[i]) {
-        reporterEndpoints.push(createdDroplets[i].networks.v4[0].ip_address + ':' + reporterListeningPort);
-      }
-    }
-
-    utils.deleteFolderRecursive(config.outFolder);
-    fs.mkdirSync(config.outFolder);
-    fs.mkdirSync(config.outFolder + '/scp');
-
-    for (var j in reporterEndpoints) {
-      if (reporterEndpoints[j]) {
-        var currentIP = reporterEndpoints[j].split(':')[0];
+        var currentIP = createdDroplets[i].networks.v4[0].ip_address;
         configFile.msg_to_send = 'Message from ' + currentIP;
-        configFile.listening_port = reporterListeningPort;
-        configFile.ips = reporterEndpoints;
         configFile.output_report_path = '/home/qa/reporter_log_' + currentIP + '.json';
         fs.mkdirSync(config.outFolder + '/scp/' + currentIP);
         fs.writeFileSync(config.outFolder + '/scp/' + currentIP + '/reporter.json',
-            JSON.stringify(configFile, null, 2));
+          JSON.stringify(configFile, null, 2));
+        fse.copySync(config.outFolder + '/scp/reporter.crust.config',
+          config.outFolder + '/scp/' + currentIP + '/reporter.crust.config');
       }
     }
     callback(null);
@@ -420,12 +384,11 @@ exports = module.exports = function(args) {
     configFile = require('./std_config_template.json');
     var stdListeningPort = listeningPort | config.listeningPort;
     if (connectionType !== 3) {
-      configFile.tcp_listening_port = stdListeningPort;
+      configFile.tcp_acceptor_port = stdListeningPort;
     }
     if (connectionType !== 2) {
-      configFile.utp_listening_port = stdListeningPort;
+      configFile.utp_acceptor_port = stdListeningPort;
     }
-    configFile.beacon_port = beaconPort | config.beaconPort;
     configFile.hard_coded_contacts = generateEndPoints(stdListeningPort);
     utils.deleteFolderRecursive(config.outFolder);
     fs.mkdirSync(config.outFolder);
@@ -504,7 +467,7 @@ exports = module.exports = function(args) {
         scpClient.scp(sourcePath, {
           host: ip,
           username: config.dropletUser,
-          password: auth.getDopletUserPassword(),
+          password: auth.getDropletUserPassword(),
           path: destPath,
           readyTimeout: 99999
         }, cb);
@@ -553,6 +516,10 @@ exports = module.exports = function(args) {
             }
             stream.on('close', function(code) {
               conn.end();
+              if (binaryName !== 'reporter') {
+                console.log('Commands Executed. Waiting 20 seconds...');
+                sleep.sleep(20);
+              }
               return cb(code === 0 ? null : errorMessage);
             });
           });
@@ -568,7 +535,7 @@ exports = module.exports = function(args) {
         var sshOptions = {
           host: createdDroplets[i].networks.v4[0].ip_address,
           username: config.dropletUser,
-          password: auth.getDopletUserPassword(),
+          password: auth.getDropletUserPassword(),
           readyTimeout: 99999
         };
         var cmd = 'tmux new-session -d \"mv ~/settings.yml ~/.teamocil/;. ~/.bash_profile;teamocil settings\"';
@@ -625,30 +592,21 @@ exports = module.exports = function(args) {
       getBuildType,
       build,
       stripBinary,
-      getNetworkSize
+      getNetworkSize,
+      getSeedNodeSize
     );
 
-    if (binaryName !== 'reporter') {
-      waterfallTasks.push(
-        getSeedNodeSize,
-        getConnectionType,
-        getBeaconPort
-      );
-    }
-
     waterfallTasks.push(
+      getConnectionType,
       getListeningPort,
       getNetworkType,
       selectDropletRegion,
       createDroplets,
-      getDroplets
+      getDroplets,
+      generateStdConfigFile
     );
 
-    if (binaryName !== 'reporter') {
-      waterfallTasks.push(
-        generateStdConfigFile
-      );
-    } else {
+    if (binaryName === 'reporter') {
       waterfallTasks.push(
         generateReporterConfigFiles
       );

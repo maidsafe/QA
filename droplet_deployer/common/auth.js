@@ -62,7 +62,7 @@ var AuthManager = function() {
     return (config.hasOwnProperty(TOKEN_KEY) ? config : credentials)[TOKEN_KEY];
   };
 
-  this.getDopletUserPassword = function() {
+  this.getDropletUserPassword = function() {
     return (credentials.hasOwnProperty(PASSWORD_KEY) ? credentials : config)[PASSWORD_KEY];
   };
 

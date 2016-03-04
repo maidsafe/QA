@@ -1,8 +1,9 @@
 {
-  "ips": null,
   "msg_to_send": null,
-  "listening_port": null,
+  "start_listening": true,
+  "start_service_discovery": false,
+  "service_runs": 1,
   "output_report_path": null,
-  "service_runs": 3,
-  "max_wait_before_restart_service_secs": 5
+  "max_wait_before_restart_service_secs": 5,
+  "max_msgs_per_sec": 100
 }

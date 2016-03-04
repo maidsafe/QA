@@ -41,9 +41,9 @@ var onMainOptionSelected = function(result) {
 
 showMainMenu = function() {
   /*jshint multistr: true */
-  utils.postQuestion('\nMain Menu \n\\' +
-'--------- \n\\' +
-'1. Setup Network \n\\' +
+  utils.postQuestion('\nMain Menu \n' +
+'--------- \n' +
+'1. Setup Network \n' +
 '2. Drop Network', onMainOptionSelected);
 };
 
