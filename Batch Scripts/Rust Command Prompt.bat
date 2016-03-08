@@ -1,5 +1,5 @@
 @echo OFF
-set RUST_BACKTRACE=0
+set RUST_BACKTRACE=1
 multirust update
 echo RUST_LOG=%RUST_LOG%
 echo RUST_BACKTRACE=%RUST_BACKTRACE%
