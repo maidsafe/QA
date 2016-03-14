@@ -261,9 +261,9 @@ exports = module.exports = function(args) {
       }
       var msg = 'There are %d existing droplets for %s for the selected %s.\n' +
           'Do you want to proceed using the same droplets? (Type Y for yes)';
-      utils.postQuestion(nodeUtil.format(msg, list.length, userName, selectedLibraryKey), function(canStop) {
+      utils.postQuestion(nodeUtil.format(msg, existingDroplets.length, userName, selectedLibraryKey), function(canStop) {
         if (canStop && canStop.toLowerCase() === 'y') {
-          createdDroplets = list;
+          createdDroplets = existingDroplets;
           executeCommandOnDroplets(createdDroplets, 'tmux kill-session', callback);
         } else {
           callback('Drop the network to srt up a fresh network');
