@@ -119,7 +119,7 @@ exports = module.exports = function() {
     var dropletsToChurn = droplets.slice(0, nonChurnNodeBounds.lowerBound - 1).concat(droplets.slice(nonChurnNodeBounds.upperBound));
 
     for (var i in dropletsToChurn) {
-      dropletsToChurn[i].isRunning = false;
+      dropletsToChurn[i].isRunning = true;
     }
 
     var getRandomIndex = function() {
