@@ -13,7 +13,7 @@ exports = module.exports = function() {
     lowerBound: 0,
     upperBound: 0
   };
-  var churnFreequency = 0;
+  var churnFrequency = 0;
 
   var getChurnFrequency = function(callback) {
     var onUserInput = function(frequency) {
@@ -21,13 +21,13 @@ exports = module.exports = function() {
         console.log('Enter a valid number');
         return getChurnFrequency();
       }
-      churnFreequency = frequency;
+      churnFrequency = frequency;
       callback();
     };
     utils.postQuestion('Enter the churn frequency in seconds', onUserInput);
   };
 
-  var executeCommandOnDroplets = function(droplets, cmd, callback) {
+  var executeCommandOnDroplet = function(droplet, cmd, callback) {
     var Handler = function(sshOptions) {
       this.run = function(cb) {
         console.log('Executing ssh commands on :: ' + sshOptions.host);
@@ -40,10 +40,6 @@ exports = module.exports = function() {
             }
             stream.on('close', function(code) {
               conn.end();
-              if (binaryName !== 'reporter') {
-                console.log('Commands Executed. Waiting 20 seconds...');
-                sleep.sleep(20);
-              }
               return cb(code === 0 ? null : errorMessage);
             });
           });
@@ -53,24 +49,17 @@ exports = module.exports = function() {
       };
       return this.run;
     };
-    var requests = [];
-    for (var i in droplets) {
-      if (droplets[i]) {
-        var sshOptions = {
-          host: droplets[i].networks.v4[0].ip_address,
-          username: config.dropletUser,
-          password: auth.getDropletUserPassword(),
-          readyTimeout: 99999
-        };
-        requests.push(new Handler(sshOptions, cmd));
-      }
-    }
-    async.series(requests, function(err) {
+    var sshOptions = {
+      host: droplet.networks.v4[0].ip_address,
+      username: config.dropletUser,
+      password: auth.getDropletUserPassword(),
+      readyTimeout: 99999
+    };
+    new Handler(sshOptions, cmd)(function(err) {
       if (!err) {
         console.log('SSH execution completed successfully, for the cmd:', cmd);
         return callback(null);
       }
-
       console.log('SSH command execution failed.');
       callback(err);
     });
@@ -129,47 +118,46 @@ exports = module.exports = function() {
   var startChurning = function() {
     var dropletsToChurn = droplets.slice(0, nonChurnNodeBounds.lowerBound - 1).concat(droplets.slice(nonChurnNodeBounds.upperBound));
 
-    var churningNodes = [];
+    for (var i in dropletsToChurn) {
+      dropletsToChurn[i].isRunning = false;
+    }
 
     var getRandomIndex = function() {
-      return Math.floor(Math.random() * droplets.length);
+      return Math.floor(Math.random() * dropletsToChurn.length);
     };
 
-    var startNode = function() {
-      console.log('starting random node');
-      var cmd = 'tmux new-session -d \"mv ~/settings.yml ~/.teamocil/;. ~/.bash_profile;teamocil settings\"';
-      executeCommandOnDroplets(churningNodes, cmd, function(err) {
+    var StartNode = function(droplet) {
+      var cmd = 'tmux new-session -d \". ~/.bash_profile;teamocil settings\"';
+      executeCommandOnDroplet(droplet, cmd, function(err) {
         if (err) {
-          var node = churningNodes[0];
-          return console.log('Failed to start node: %s - $s', node.name, node.networks.v4[0].ip_addres);
+          return console.log('Failed to start node: %s - $s', droplet.name, droplet.networks.v4[0].ip_addres);
         }
-        console.log('Node started: %s - $s', node.name, node.networks.v4[0].ip_addres);
+        droplet.isRunning = true;
+        console.log('Node started: %s - $s', droplet.name, droplet.networks.v4[0].ip_addres);
       });
     };
 
-    var stopNode = function() {
-      console.log('stopping');
+    var StopNode = function(droplet) {
       var cmd = 'tmux kill-session && mv ~/Node.log Node_`date +%Y_%m_%d_%H:%M:%S`.log';
-      churningNodes.push(dropletsToChurn[getRandomIndex()]);
-      executeCommandOnDroplets(churningNodes, cmd, function(err) {
+      executeCommandOnDroplet(droplet, cmd, function(err) {
         if (err) {
-          var node = churningNodes[0];
-          return console.log('Failed to stop node: %s - $s', node.name, node.networks.v4[0].ip_addres);
+          return console.log('Failed to stop node: %s - $s', droplet.name, droplet.networks.v4[0].ip_addres);
         }
-        console.log('Node stopped: %s - $s', node.name, node.networks.v4[0].ip_addres);
-        churningNodes = [];
+        droplet.isRunning = false;
+        console.log('Node stopped: %s - $s', droplet.name, droplet.networks.v4[0].ip_addres);
       });
     };
 
     var churn = function() {
-      if (churningNodes.length === 0) {
-        return stopNode();
+      var droplet = dropletsToChurn[getRandomIndex()];
+      if(droplet.isRunning) {
+        new StopNode(droplet);
       } else {
-        return startNode();
+        new StartNode(droplet);
       }
     };
 
-    setInterval(churn, churnFreequency);
+    setInterval(churn, churnFrequency);
   };
 
   var prepare = function(selectedOption) {

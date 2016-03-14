@@ -1,4 +1,5 @@
 var setUpNetwork = require('./setup_network');
+var churnNetwork = require('./churn_network');
 var dropNetwork = require('./drop_network');
 var utils = require('./common/utils');
 var auth = require('./common/auth');
@@ -29,6 +30,10 @@ var onMainOptionSelected = function(result) {
         break;
 
       case 2:
+        churnNetwork();
+        break;
+
+      case 3:
         dropNetwork();
         break;
 
@@ -42,9 +47,10 @@ var onMainOptionSelected = function(result) {
 showMainMenu = function() {
   /*jshint multistr: true */
   utils.postQuestion('\nMain Menu \n' +
-'--------- \n' +
-'1. Setup Network \n' +
-'2. Drop Network', onMainOptionSelected);
+  '--------- \n' +
+  '1. Setup Network \n' +
+  '2. Churn Network \n' +
+  '3. Drop Network', onMainOptionSelected);
 };
 
 if (!isPlatformSupported()) {
