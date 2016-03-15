@@ -270,7 +270,7 @@ exports = module.exports = function(args) {
             callback,
             true);
         } else {
-          callback('Drop the network to srt up a fresh network');
+          callback('Drop the network to start up a fresh network');
         }
       });
     });
