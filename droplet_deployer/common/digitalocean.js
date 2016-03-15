@@ -81,13 +81,25 @@ var Api = function(token, testMode) {
   };
 
   this.getDropletList = function(callback) {
-    client.get('v2/droplets?page=1&per_page=500', function(err, response, body) {
-      if (err || response.statusCode !== 200) {
-        callback('Failed to fetch Droplets list');
-        return;
-      }
-      callback(null, body.droplets);
-    });
+    var dropletList = [];
+    var PAGE_SIZE = 500;
+    var pageNumber = 1;
+    var getDroplets = function() {
+      client.get('v2/droplets?page=' + pageNumber + '&per_page=' + PAGE_SIZE, function(err, response, body) {
+        if (err || response.statusCode !== 200) {
+          callback('Failed to fetch Droplets list');
+          return;
+        }
+        dropletList = dropletList.concat(body.droplets);
+        if (body.droplets.length === PAGE_SIZE) {
+          pageNumber += 1;
+          getDroplets();
+        } else {
+          callback(null, dropletList);
+        }
+      });
+    };
+    getDroplets();
   };
 
   this.deleteDroplet = function(id, callback) {

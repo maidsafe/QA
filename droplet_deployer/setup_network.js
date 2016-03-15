@@ -10,6 +10,7 @@ exports = module.exports = function(args) {
   var async = require('async');
   var exec = require('child_process').exec;
   var utils = require('./common/utils');
+  var nodeUtil = require('util');
   var config = require('./config.json');
   var auth = require('./common/auth');
   var SshClient = require('ssh2').Client;
@@ -35,6 +36,7 @@ exports = module.exports = function(args) {
   var connectionType;
   var listeningPort;
   var progressBar;
+  var isUsingExistingDroplets = true;
 
   var BINARY_EXT = {
     'windows_nt': '.exe',
@@ -43,7 +45,7 @@ exports = module.exports = function(args) {
 
   var getRepositoryLocation = function(callback) {
     var message = 'Please select the source repository location\n---------\n' +
-      '1. GitHub master branch\n2. Local repository\n';
+        '1. GitHub master branch\n2. Local repository\n';
 
     var onRepositoryLocationSelected = function(option) {
       option = parseInt(option);
@@ -94,7 +96,7 @@ exports = module.exports = function(args) {
 
     console.log('Cloning Repository - ' + selectedLibraryRepoName);
     exec('git clone ' + libraryConfig.url + ' ' +
-          buildPath + ' --depth 1', function(err) {
+    buildPath + ' --depth 1', function(err) {
       callback(err);
     });
   };
@@ -127,8 +129,11 @@ exports = module.exports = function(args) {
   };
 
   var getNetworkSize = function(callback) {
+    if (isUsingExistingDroplets) {
+      return callback();
+    }
     utils.postQuestion('Please enter the size of the network between ' +
-      config.minNetworkSize + '-' + config.maxNetworkSize, function(size) {
+    config.minNetworkSize + '-' + config.maxNetworkSize, function(size) {
       size = parseInt(size);
       if (isNaN(size) || size < config.minNetworkSize || size > config.maxNetworkSize) {
         console.log('Invalid input');
@@ -141,13 +146,13 @@ exports = module.exports = function(args) {
   };
 
   var getSeedNodeSize = function(callback) {
-    if (binaryName === 'crust_peer' || binaryName === 'reporter' ) {
+    if (binaryName === 'crust_peer' || binaryName === 'reporter') {
       seedNodeSize = networkSize;
       return callback(null);
     }
 
     utils.postQuestion('Please enter the size of the seed nodes between ' +
-      config.minSeedNodeSize + '-' + config.maxSeedNodeSize, function(size) {
+    config.minSeedNodeSize + '-' + config.maxSeedNodeSize, function(size) {
       size = parseInt(size);
       if (isNaN(size) || size < config.minSeedNodeSize || size > config.maxSeedNodeSize) {
         console.log('Invalid input');
@@ -174,13 +179,65 @@ exports = module.exports = function(args) {
   };
 
   var getDropletRegions = function(callback) {
+    if (isUsingExistingDroplets) {
+      return callback();
+    }
     digitalOcean.getAvaliableRegions(config.dropletSize, function(err, availableRegions) {
       if (err) {
         callback(err);
         return;
       }
       dropletRegions = availableRegions;
-      callback(null);
+      callback();
+    });
+  };
+
+  var executeCommandOnDroplets = function(droplets, cmd, callback, noDelay) {
+    var Handler = function(sshOptions) {
+      this.run = function(cb) {
+        console.log('Executing ssh commands on :: ' + sshOptions.host);
+        var conn = new SshClient();
+        var errorMessage = 'SSH Execution Failed for: ' + sshOptions.host;
+        conn.on('ready', function() {
+          conn.exec(cmd, function(err, stream) {
+            if (err) {
+              return cb(errorMessage);
+            }
+            stream.on('close', function(code) {
+              conn.end();
+              if (!noDelay && binaryName !== 'reporter') {
+                console.log('Commands Executed. Waiting 10 seconds...');
+                sleep.sleep(10);
+              }
+              return cb(code === 0 ? null : errorMessage);
+            });
+          });
+        }).on('error', function(err) {
+          return cb(errorMessage);
+        }).connect(sshOptions);
+      };
+      return this.run;
+    };
+    var requests = [];
+    for (var i in droplets) {
+      if (droplets[i]) {
+        var sshOptions = {
+          host: droplets[i].networks.v4[0].ip_address,
+          username: config.dropletUser,
+          password: auth.getDropletUserPassword(),
+          readyTimeout: 99999
+        };
+        requests.push(new Handler(sshOptions, cmd));
+      }
+    }
+    async.series(requests, function(err) {
+      if (!err) {
+        console.log('SSH execution completed successfully.\n');
+        return callback(null);
+      }
+
+      console.log('SSH command execution failed.');
+      callback(err);
     });
   };
 
@@ -192,43 +249,62 @@ exports = module.exports = function(args) {
       }
       var userName = auth.getUserName();
       var pattern = userName + '-' + selectedLibraryKey;
+      var existingDroplets = [];
       for (var i in list) {
         if (list[i].name.indexOf(pattern) === 0) {
-          callback('User: ' + userName + ' has an existing network for ' + selectedLibraryKey +
-                   '.\nPlease clear existing network with the Drop Network option.\n\n');
-          return;
+          existingDroplets.push(list[i]);
         }
       }
-      callback(null);
+      isUsingExistingDroplets = existingDroplets.length > 0;
+      if (!isUsingExistingDroplets) {
+        return callback();
+      }
+      var msg = 'There are %d existing droplets for %s for the selected %s.\n' +
+          'Do you want to proceed using the same droplets? (Type Y for yes)';
+      utils.postQuestion(nodeUtil.format(msg, existingDroplets.length, userName, selectedLibraryKey), function(canStop) {
+        if (canStop && canStop.toLowerCase() === 'y') {
+          createdDroplets = existingDroplets;
+          console.log('Clearing previous network state\n');
+          executeCommandOnDroplets(createdDroplets,
+            nodeUtil.format('tmux kill-session; rm *.log; rm bootstrap.cache; rm %s* || true', binaryName),
+            callback,
+            true);
+        } else {
+          callback('Drop the network to start up a fresh network');
+        }
+      });
     });
   };
 
   var selectDropletRegion = function(spreadNetwork, callback) {
     if (config.hasOwnProperty('imageRegion') && config.imageRegion) {
-      callback(null, [ config.imageRegion ]);
+      callback(null, [config.imageRegion]);
     } else {
       callback('imageRegion not specified in config');
     }
     // TODO - To be enhanced
     /*if (spreadNetwork) {
-      callback(null, dropletRegions);
-      return;
-    }
-    var question = 'Please select a region';
-    for (var i in dropletRegions) {
-      question += ('\n' + (parseInt(i)+1) + ' ' + dropletRegions[i]);
-    }
-    utils.postQuestion(question, function(value) {
-      var index = parseInt(value);
-      if (isNaN(index) || index < 1 || index > dropletRegions.length) {
-        selectDropletRegion(spreadNetwork, callback);
-      } else {
-        callback(null, [dropletRegions[index - 1]]);
-      }
-    });*/
+     callback(null, dropletRegions);
+     return;
+     }
+     var question = 'Please select a region';
+     for (var i in dropletRegions) {
+     question += ('\n' + (parseInt(i)+1) + ' ' + dropletRegions[i]);
+     }
+     utils.postQuestion(question, function(value) {
+     var index = parseInt(value);
+     if (isNaN(index) || index < 1 || index > dropletRegions.length) {
+     selectDropletRegion(spreadNetwork, callback);
+     } else {
+     callback(null, [dropletRegions[index - 1]]);
+     }
+     });*/
   };
 
   var createDroplets = function(selectedRegions, callback) {
+    if (isUsingExistingDroplets) {
+      return callback(null, []);
+    }
     var name;
     var region;
     var TempFunc = function(name, region, size, image, keys) {
@@ -263,6 +339,9 @@ exports = module.exports = function(args) {
   };
 
   var getDroplets = function(idList, callback) {
+    if (isUsingExistingDroplets) {
+      return callback();
+    }
     if (!progressBar) {
       console.log('\n');
       progressBar = new ProgressBar('Initialising droplets [:bar] :current/:total :percent', {
@@ -351,8 +430,8 @@ exports = module.exports = function(args) {
     for (var i = 0; i < seedNodeSize; i++) {
       ip = createdDroplets[i].networks.v4[0].ip_address;
       endPoints.push({
-        tcp_acceptors: connectionType !== 3 ? [ ip + ':' + stdListeningPort ] : [],
-        utp_custom_listeners: connectionType !== 2 ? [ ip + ':' + stdListeningPort ] : [],
+        tcp_acceptors: connectionType !== 3 ? [ip + ':' + stdListeningPort] : [],
+        utp_custom_listeners: connectionType !== 2 ? [ip + ':' + stdListeningPort] : [],
         udp_mapper_servers: [],
         tcp_mapper_servers: []
       });
@@ -371,9 +450,9 @@ exports = module.exports = function(args) {
         configFile.output_report_path = '/home/qa/reporter_log_' + currentIP + '.json';
         fs.mkdirSync(config.outFolder + '/scp/' + currentIP);
         fs.writeFileSync(config.outFolder + '/scp/' + currentIP + '/reporter.json',
-          JSON.stringify(configFile, null, 2));
+            JSON.stringify(configFile, null, 2));
         fse.copySync(config.outFolder + '/scp/reporter.crust.config',
-          config.outFolder + '/scp/' + currentIP + '/reporter.crust.config');
+            config.outFolder + '/scp/' + currentIP + '/reporter.crust.config');
       }
     }
     callback(null);
@@ -440,7 +519,7 @@ exports = module.exports = function(args) {
       for (var i in createdDroplets) {
         if (createdDroplets[i]) {
           fse.copySync(binaryPath + binaryName,
-              config.outFolder + '/scp/' + createdDroplets[i].networks.v4[0].ip_address  + '/' + binaryName);
+              config.outFolder + '/scp/' + createdDroplets[i].networks.v4[0].ip_address + '/' + binaryName);
         }
       }
       callback(null);
@@ -503,66 +582,21 @@ exports = module.exports = function(args) {
     }
   };
 
-  var executeRemoteCommands = function(callback) {
-    var Handler = function(sshOptions, cmd) {
-      this.run = function(cb) {
-        console.log('Executing ssh commands on :: ' + sshOptions.host);
-        var conn = new SshClient();
-        var errorMessage = 'SSH Execution Failed for: ' + sshOptions.host;
-        conn.on('ready', function() {
-          conn.exec(cmd, function(err, stream) {
-            if (err) {
-              return cb(errorMessage);
-            }
-            stream.on('close', function(code) {
-              conn.end();
-              if (binaryName !== 'reporter') {
-                console.log('Commands Executed. Waiting 20 seconds...');
-                sleep.sleep(20);
-              }
-              return cb(code === 0 ? null : errorMessage);
-            });
-          });
-        }).on('error', function() {
-          return cb(errorMessage);
-        }).connect(sshOptions);
-      };
-      return this.run;
-    };
-    var requests = [];
-    for (var i in createdDroplets) {
-      if (createdDroplets[i]) {
-        var sshOptions = {
-          host: createdDroplets[i].networks.v4[0].ip_address,
-          username: config.dropletUser,
-          password: auth.getDropletUserPassword(),
-          readyTimeout: 99999
-        };
-        var cmd = 'tmux new-session -d \"mv ~/settings.yml ~/.teamocil/;. ~/.bash_profile;teamocil settings\"';
-        requests.push(new Handler(sshOptions, cmd));
-      }
-    }
-    async.series(requests, function(err) {
-      if (!err) {
-        console.log('SSH execution completed successfully.');
-        return callback(null);
-      }
-
-      console.log('SSH command execution failed.');
-      callback(err);
-    });
+  var startTmuxSession = function(callback) {
+    var cmd = 'tmux new-session -d \"mv ~/settings.yml ~/.teamocil/;. ~/.bash_profile;teamocil settings\"';
+    executeCommandOnDroplets(createdDroplets, cmd, callback, false)
   };
 
   var printResult = function(callback) {
     console.log('\n');
     var table = new Table({
-      head: [ 'Droplet Name', 'SSH Command' ],
-      colWidths: [ 40, 100 ]
+      head: ['Droplet Name', 'SSH Command'],
+      colWidths: [40, 100]
     });
     for (var i in createdDroplets) {
       if (createdDroplets[i]) {
-        table.push([ createdDroplets[i].name, 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -t ' +
-        config.dropletUser + '@' + createdDroplets[i].networks.v4[0].ip_address + ' \"tmux attach\"' ]);
+        table.push([createdDroplets[i].name, 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -t ' +
+        config.dropletUser + '@' + createdDroplets[i].networks.v4[0].ip_address + ' \"tmux attach\"']);
       }
     }
     console.log(table.toString());
@@ -582,43 +616,43 @@ exports = module.exports = function(args) {
     selectedLibraryRepoName = temp[temp.length - 1].split('.')[0];
     libraryConfig = config.libraries[selectedLibraryKey];
     binaryName = (libraryConfig.hasOwnProperty('example') ? libraryConfig.example : selectedLibraryRepoName) +
-      BINARY_EXT;
+    BINARY_EXT;
 
     waterfallTasks.push(
-      validateUniqueNetwork,
-      getDropletRegions,
-      getRepositoryLocation,
-      clone,
-      getBuildType,
-      build,
-      stripBinary,
-      getNetworkSize,
-      getSeedNodeSize
+        validateUniqueNetwork,
+        getDropletRegions,
+        getRepositoryLocation,
+        clone,
+        getBuildType,
+        build,
+        stripBinary,
+        getNetworkSize,
+        getSeedNodeSize
     );
 
     waterfallTasks.push(
-      getConnectionType,
-      getListeningPort,
-      getNetworkType,
-      selectDropletRegion,
-      createDroplets,
-      getDroplets,
-      generateStdConfigFile
+        getConnectionType,
+        getListeningPort,
+        getNetworkType,
+        selectDropletRegion,
+        createDroplets,
+        getDroplets,
+        generateStdConfigFile
     );
 
     if (binaryName === 'reporter') {
       waterfallTasks.push(
-        generateReporterConfigFiles
+          generateReporterConfigFiles
       );
     }
 
     waterfallTasks.push(
-      generateIPListFile,
-      generateTeamocilSettingsFiles,
-      copyBinary,
-      transferFiles,
-      executeRemoteCommands,
-      printResult
+        generateIPListFile,
+        generateTeamocilSettingsFiles,
+        copyBinary,
+        transferFiles,
+        startTmuxSession,
+        printResult
     );
     async.waterfall(waterfallTasks, function(err) {
       if (err) {
@@ -655,16 +689,15 @@ exports = module.exports = function(args) {
     for (var key in config.libraries) {
       if (config.libraries[key]) {
         isExample = config.libraries[key].hasOwnProperty('example');
-        libOptions +=  (i + '. ' + key.replace(/-.*/g, '') + ' ' + (isExample ? 'Example' : 'Binary') +
+        libOptions += (i + '. ' + key.replace(/-.*/g, '') + ' ' + (isExample ? 'Example' : 'Binary') +
         ' - ' + (isExample ? config.libraries[key].example : config.libraries[key].binary) + '\n');
         i++;
       }
     }
 
     utils.postQuestion('Please choose the entry for which the network is to be set up: ' +
-        libOptions, onSetupOptionSelected);
+    libOptions, onSetupOptionSelected);
   };
 
   showSetupOptions();
 };
-
