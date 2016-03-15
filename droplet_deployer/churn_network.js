@@ -29,7 +29,7 @@ exports = module.exports = function() {
 
   var GetDropletStatus = function(droplet) {
     this.run = function(callback) {
-      executeCommandOnDroplet(droplet, 'cat Node.log', function(err) {
+      executeCommandOnDroplet(droplet, 'ls Node.log', function(err) {
         callback(null, err ? false : true);
       });
     };
@@ -67,7 +67,6 @@ exports = module.exports = function() {
       if (!err) {
         return callback(null);
       }
-      console.log('SSH command execution failed.');
       callback(err);
     });
   };
@@ -124,7 +123,6 @@ exports = module.exports = function() {
 
   var startChurning = function() {
     var runningNodesCount = 0;
-    var stoppedNodesCount = 0;
     var dropletsToChurn = droplets.slice(0, nonChurnNodeBounds.lowerBound - 1).concat(droplets.slice(nonChurnNodeBounds.upperBound));
 
     var getRandomIndex = function() {
@@ -133,10 +131,6 @@ exports = module.exports = function() {
 
     var getNodeIndexFromName = function(name) {
       return name.split(/[- ]+/).pop();
-    };
-
-    var printNodesStatusCount = function() {
-      console.log('Running nodes : %d\tStopped nodes: %d', runningNodesCount, stoppedNodesCount);
     };
 
     var StartNode = function(droplet) {
@@ -148,8 +142,7 @@ exports = module.exports = function() {
         }
         droplet.isRunning = true;
         runningNodesCount++;
-        console.log('Started: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
-        printNodesStatusCount();
+        console.log('Started: Node %s \t Current Network Size: %s', nodeIndex, runningNodesCount);
       });
     };
 
@@ -161,9 +154,8 @@ exports = module.exports = function() {
           return console.log('Failed to stop: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
         }
         droplet.isRunning = false;
-        stoppedNodesCount++;
-        console.log('Stopped: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
-        printNodesStatusCount();
+        runningNodesCount--;
+        console.log('Stopped: Node %s \t Current Network Size: %s', nodeIndex, runningNodesCount);
       });
     };
 
@@ -176,9 +168,10 @@ exports = module.exports = function() {
       }
     };
 
+    console.log('Calculating current network size\n');
     var tasks = [];
-    for (var i in dropletsToChurn) {
-      tasks.push(new GetDropletStatus(dropletsToChurn[i]));
+    for (var i in droplets) {
+      tasks.push(new GetDropletStatus(droplets[i]));
     }
 
     async.parallel(tasks, function(err, res) {
@@ -186,13 +179,19 @@ exports = module.exports = function() {
         throw err;
       }
       for (var i in res) {
-        dropletsToChurn[i].isRunning = res[i];
+        dropletsToChurn.some(function (el) {
+          if (el.name.indexOf(droplets[i].name) === 0) {
+            el.isRunning = res[i];
+            return true;
+          }
+        });
+
         if (res[i]) {
           runningNodesCount++;
-        } else {
-          stoppedNodesCount++;
         }
       }
+
+      console.log('Current Network Size: %s\n\nStarting Churn...\n', runningNodesCount);
       setInterval(churn, churnFrequency * 1000);
     });
   };
