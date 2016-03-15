@@ -24,13 +24,12 @@ exports = module.exports = function() {
       churnFrequency = frequency;
       callback();
     };
-    utils.postQuestion('Enter the churn frequency in seconds', onUserInput);
+    utils.postQuestion('Enter the churn interval in seconds', onUserInput);
   };
 
   var executeCommandOnDroplet = function(droplet, cmd, callback) {
     var Handler = function(sshOptions) {
       this.run = function(cb) {
-        console.log('Executing ssh commands on :: ' + sshOptions.host);
         var conn = new SshClient();
         var errorMessage = 'SSH Execution Failed for: ' + sshOptions.host;
         conn.on('ready', function() {
@@ -57,7 +56,6 @@ exports = module.exports = function() {
     };
     new Handler(sshOptions, cmd)(function(err) {
       if (!err) {
-        console.log('SSH execution completed successfully, for the cmd:', cmd);
         return callback(null);
       }
       console.log('SSH command execution failed.');
@@ -126,25 +124,31 @@ exports = module.exports = function() {
       return Math.floor(Math.random() * dropletsToChurn.length);
     };
 
+    var getNodeIndexFromName = function(name) {
+      return name.split(/[- ]+/).pop();
+    };
+
     var StartNode = function(droplet) {
       var cmd = 'tmux new-session -d \". ~/.bash_profile;teamocil settings\"';
+      var nodeIndex = getNodeIndexFromName(droplet.name);
       executeCommandOnDroplet(droplet, cmd, function(err) {
         if (err) {
-          return console.log('Failed to start node: %s - $s', droplet.name, droplet.networks.v4[0].ip_addres);
+          return console.log('Failed to start: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
         }
         droplet.isRunning = true;
-        console.log('Node started: %s - $s', droplet.name, droplet.networks.v4[0].ip_addres);
+        console.log('Started: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
       });
     };
 
     var StopNode = function(droplet) {
-      var cmd = 'tmux kill-session && mv ~/Node.log Node_`date +%Y_%m_%d_%H:%M:%S`.log';
+      var cmd = 'tmux kill-session; mv ~/Node.log Node_`date +%Y_%m_%d_%H:%M:%S`.log || true' ;
+      var nodeIndex = getNodeIndexFromName(droplet.name);
       executeCommandOnDroplet(droplet, cmd, function(err) {
         if (err) {
-          return console.log('Failed to stop node: %s - $s', droplet.name, droplet.networks.v4[0].ip_addres);
+          return console.log('Failed to stop: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
         }
         droplet.isRunning = false;
-        console.log('Node stopped: %s - $s', droplet.name, droplet.networks.v4[0].ip_addres);
+        console.log('Stopped: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
       });
     };
 
@@ -157,7 +161,7 @@ exports = module.exports = function() {
       }
     };
 
-    setInterval(churn, churnFrequency);
+    setInterval(churn, churnFrequency * 1000);
   };
 
   var prepare = function(selectedOption) {

@@ -192,7 +192,7 @@ exports = module.exports = function(args) {
     });
   };
 
-  var executeCommandOnDroplets = function(droplets, cmd, callback) {
+  var executeCommandOnDroplets = function(droplets, cmd, callback, noDelay) {
     var Handler = function(sshOptions) {
       this.run = function(cb) {
         console.log('Executing ssh commands on :: ' + sshOptions.host);
@@ -205,14 +205,14 @@ exports = module.exports = function(args) {
             }
             stream.on('close', function(code) {
               conn.end();
-              if (binaryName !== 'reporter') {
-                console.log('Commands Executed. Waiting 20 seconds...');
-                sleep.sleep(20);
+              if (!noDelay && binaryName !== 'reporter') {
+                console.log('Commands Executed. Waiting 10 seconds...');
+                sleep.sleep(10);
               }
               return cb(code === 0 ? null : errorMessage);
             });
           });
-        }).on('error', function() {
+        }).on('error', function(err) {
           return cb(errorMessage);
         }).connect(sshOptions);
       };
@@ -232,7 +232,7 @@ exports = module.exports = function(args) {
     }
     async.series(requests, function(err) {
       if (!err) {
-        console.log('SSH execution completed successfully, for the cmd:', cmd);
+        console.log('SSH execution completed successfully.\n');
         return callback(null);
       }
 
@@ -264,7 +264,11 @@ exports = module.exports = function(args) {
       utils.postQuestion(nodeUtil.format(msg, existingDroplets.length, userName, selectedLibraryKey), function(canStop) {
         if (canStop && canStop.toLowerCase() === 'y') {
           createdDroplets = existingDroplets;
-          executeCommandOnDroplets(createdDroplets, 'tmux kill-session', callback);
+          console.log('Clearing previous network state\n');
+          executeCommandOnDroplets(createdDroplets,
+            nodeUtil.format('tmux kill-session; rm *.log; rm bootstrap.cache; rm %s* || true', binaryName),
+            callback,
+            true);
         } else {
           callback('Drop the network to srt up a fresh network');
         }
@@ -299,7 +303,7 @@ exports = module.exports = function(args) {
 
   var createDroplets = function(selectedRegions, callback) {
     if (isUsingExistingDroplets) {
-      return callback();
+      return callback(null, []);
     }
     var name;
     var region;
@@ -580,7 +584,7 @@ exports = module.exports = function(args) {
 
   var startTmuxSession = function(callback) {
     var cmd = 'tmux new-session -d \"mv ~/settings.yml ~/.teamocil/;. ~/.bash_profile;teamocil settings\"';
-    executeCommandOnDroplets(createdDroplets, cmd, callback)
+    executeCommandOnDroplets(createdDroplets, cmd, callback, false)
   };
 
   var printResult = function(callback) {
