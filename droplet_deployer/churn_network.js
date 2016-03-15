@@ -27,6 +27,15 @@ exports = module.exports = function() {
     utils.postQuestion('Enter the churn interval in seconds', onUserInput);
   };
 
+  var GetDropletStatus = function(droplet) {
+    this.run = function(callback) {
+      executeCommandOnDroplet(droplet, 'cat Node.log', function(err) {
+        callback(null, err ? false : true);
+      });
+    };
+    return this.run;
+  };
+
   var executeCommandOnDroplet = function(droplet, cmd, callback) {
     var Handler = function(sshOptions) {
       this.run = function(cb) {
@@ -114,11 +123,9 @@ exports = module.exports = function() {
   };
 
   var startChurning = function() {
+    var runningNodesCount = 0;
+    var stoppedNodesCount = 0;
     var dropletsToChurn = droplets.slice(0, nonChurnNodeBounds.lowerBound - 1).concat(droplets.slice(nonChurnNodeBounds.upperBound));
-
-    for (var i in dropletsToChurn) {
-      dropletsToChurn[i].isRunning = true;
-    }
 
     var getRandomIndex = function() {
       return Math.floor(Math.random() * dropletsToChurn.length);
@@ -126,6 +133,10 @@ exports = module.exports = function() {
 
     var getNodeIndexFromName = function(name) {
       return name.split(/[- ]+/).pop();
+    };
+
+    var printNodesStatusCount = function() {
+      console.log('Running nodes : %d\tStopped nodes: %d', runningNodesCount, stoppedNodesCount);
     };
 
     var StartNode = function(droplet) {
@@ -136,7 +147,9 @@ exports = module.exports = function() {
           return console.log('Failed to start: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
         }
         droplet.isRunning = true;
+        runningNodesCount++;
         console.log('Started: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
+        printNodesStatusCount();
       });
     };
 
@@ -148,7 +161,9 @@ exports = module.exports = function() {
           return console.log('Failed to stop: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
         }
         droplet.isRunning = false;
+        stoppedNodesCount++;
         console.log('Stopped: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
+        printNodesStatusCount();
       });
     };
 
@@ -161,7 +176,25 @@ exports = module.exports = function() {
       }
     };
 
-    setInterval(churn, churnFrequency * 1000);
+    var tasks = [];
+    for (var i in dropletsToChurn) {
+      tasks.push(new GetDropletStatus(dropletsToChurn[i]));
+    }
+
+    async.parallel(tasks, function(err, res) {
+      if (err) {
+        throw err;
+      }
+      for (var i in res) {
+        dropletsToChurn[i].isRunning = res[i];
+        if (res[i]) {
+          runningNodesCount++;
+        } else {
+          stoppedNodesCount++;
+        }
+      }
+      setInterval(churn, churnFrequency * 1000);
+    });
   };
 
   var prepare = function(selectedOption) {
