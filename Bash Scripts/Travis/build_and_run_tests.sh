@@ -13,7 +13,7 @@ if [[ $TRAVIS_RUST_VERSION = nightly ]]; then
   # Don't make a Clippy failure result in overall failure for now
   cargo test --no-run --features clippy || true
   if [ ! -z "$Features" ]; then
-    cargo test --no-run --features clippy $Features || true
+    cargo test --no-run --features "clippy $Features" || true
   fi
 else
   if [ ! -z "$Features" ]; then
