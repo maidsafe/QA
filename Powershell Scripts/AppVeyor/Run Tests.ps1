@@ -18,7 +18,11 @@ $cargo_test = {
     }
 
     cargo test $with_features $release_flag -- --nocapture
-    $LASTEXITCODE > ($env:TEMP + "\TestResult.txt")
+    if ($?) {
+        $LASTEXITCODE > ($env:TEMP + "\TestResult.txt")
+    } else {
+        99 > ($env:TEMP + "\TestResult.txt")
+    }
 }
 
 # Run the test script
