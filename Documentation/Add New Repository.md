@@ -146,9 +146,17 @@ Log into Travis and go to repository *> settings > general settings* and switch 
 
 ![Travis yml present switch](Images/17.png)
 
-Log into Appveyor and go to repository *> settings > general* and tick the *Skip branches without appveyor.yml* and *Rolling builds* check boxes.
+Log into Appveyor and go to repository *> settings > general* and tick the *Do not build tags* , *Skip branches without appveyor.yml* and *Rolling builds* check boxes.
+
+![Appveyor yml present switch](Images/19.png)
 
 ![Appveyor yml present switch](Images/18.png)
+
+### Add Reviewable
+
+Login to https://reviewable.io using the MaidSafe-QA GitHub account and go to *Repositories* section and toggle to green to enable Reviewable for pull requests.
+
+![Reviewable switch](Images/20.png)
 
 
 ### Update QA readme.md
