@@ -21,9 +21,6 @@ $env:Path = $env:USERPROFILE + "\.cargo\bin;" + $env:Path
 # Set the requested channel and install nightly
 # multirust update nightly
 multirust default $env:RUST_VERSION
-if (!$?) {
-    exit 99
-}
 
 "Rust version:"
 ""
