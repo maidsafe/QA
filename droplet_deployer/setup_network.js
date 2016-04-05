@@ -206,13 +206,13 @@ exports = module.exports = function(args) {
             stream.on('close', function(code) {
               conn.end();
               if (!noDelay && binaryName !== 'reporter') {
-                console.log('Commands Executed. Waiting 10 seconds...');
-                sleep.sleep(10);
+                console.log('Commands Executed. Waiting 20 seconds...');
+                sleep.sleep(20);
               }
               return cb(code === 0 ? null : errorMessage);
             });
           });
-        }).on('error', function(err) {
+        }).on('error', function() {
           return cb(errorMessage);
         }).connect(sshOptions);
       };
@@ -464,9 +464,11 @@ exports = module.exports = function(args) {
     var stdListeningPort = listeningPort | config.listeningPort;
     if (connectionType !== 3) {
       configFile.tcp_acceptor_port = stdListeningPort;
+      configFile.enable_tcp = true;
     }
     if (connectionType !== 2) {
       configFile.utp_acceptor_port = stdListeningPort;
+      configFile.enable_utp = true;
     }
     configFile.hard_coded_contacts = generateEndPoints(stdListeningPort);
     utils.deleteFolderRecursive(config.outFolder);

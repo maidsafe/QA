@@ -123,6 +123,8 @@ exports = module.exports = function() {
 
   var startChurning = function() {
     var runningNodesCount = 0;
+    var nodesStarted = 0;
+    var nodesStopped = 0;
     var dropletsToChurn = droplets.slice(0, nonChurnNodeBounds.lowerBound - 1).concat(droplets.slice(nonChurnNodeBounds.upperBound));
 
     var getRandomIndex = function() {
@@ -142,7 +144,9 @@ exports = module.exports = function() {
         }
         droplet.isRunning = true;
         runningNodesCount++;
+        nodesStarted++;
         console.log('Started: Node %s \t Current Network Size: %s', nodeIndex, runningNodesCount);
+        console.log('Completed Churn Event: %s \t Nodes Started %s \t Nodes Stopped %s', nodesStarted + nodesStopped, nodesStarted, nodesStopped);
       });
     };
 
@@ -155,7 +159,9 @@ exports = module.exports = function() {
         }
         droplet.isRunning = false;
         runningNodesCount--;
+        nodesStopped++;
         console.log('Stopped: Node %s \t Current Network Size: %s', nodeIndex, runningNodesCount);
+        console.log('Completed Churn Event: %s \t Nodes Started %s \t Nodes Stopped %s', nodesStarted + nodesStopped, nodesStarted, nodesStopped);
       });
     };
 
