@@ -10,7 +10,7 @@ trap 'exit' ERR
 ProjectName=${TRAVIS_REPO_SLUG##*/};
 
 cd $TRAVIS_BUILD_DIR
-cargo doc
+cargo doc --features generate-diagrams || cargo doc
 echo "<meta http-equiv=refresh content=0;url=${ProjectName}/index.html>" > target/doc/index.html
 rm -rf /tmp/doc
 mv target/doc /tmp/doc
