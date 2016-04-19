@@ -50,7 +50,9 @@ ssh yum.maidsafe.net 'mkdir -p ~/systemd/ && mkdir -p ~/SysV-style/'
 scp "$VaultRoot"/packages/linux/safe_vault_*.tar.gz apt.maidsafe.net:~/ &
 scp "$VaultRoot"/packages/linux/systemd/safe*.deb apt.maidsafe.net:~/systemd/ &
 scp "$VaultRoot"/packages/linux/SysV-style/safe*.deb apt.maidsafe.net:~/SysV-style/ &
+scp "$VaultRoot"/packages/linux/safe_vault_latest_version.txt apt.maidsafe.net:~/ &
 scp "$VaultRoot"/packages/linux/systemd/safe*.rpm yum.maidsafe.net:~/systemd/ &
 scp "$VaultRoot"/packages/linux/SysV-style/safe*.rpm yum.maidsafe.net:~/SysV-style/ &
+scp "$VaultRoot"/packages/linux/safe_vault_latest_version.txt yum.maidsafe.net:~/ &
 
 wait
