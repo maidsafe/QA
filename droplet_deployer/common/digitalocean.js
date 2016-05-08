@@ -82,7 +82,7 @@ var Api = function(token, testMode) {
 
   this.getDropletList = function(callback) {
     var dropletList = [];
-    var PAGE_SIZE = 500;
+    var PAGE_SIZE = 200;
     var pageNumber = 1;
     var getDroplets = function() {
       client.get('v2/droplets?page=' + pageNumber + '&per_page=' + PAGE_SIZE, function(err, response, body) {

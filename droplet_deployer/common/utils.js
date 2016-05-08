@@ -70,6 +70,25 @@ var Utils = function() {
     });
   };
 
+  self.isInt = function(value) {
+    var x;
+    if (isNaN(value)) {
+      return false;
+    }
+    x = parseFloat(value);
+    return (x | 0) === x;
+  };
+
+  self.getDropletIps = function(droplets) {
+    var ips = [];
+    for (var i in droplets) {
+      if (droplets[i]) {
+        ips.push(droplets[i].networks.v4[0].ip_address);
+      }
+    }
+    return ips;
+  };
+
   return self;
 };
 
