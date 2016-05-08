@@ -1,7 +1,5 @@
 #!/bin/bash
 
-export SODIUM_LIB_DIR=$HOME/libsodium-1.0.8/lib
-
 # Stop the script if any command fails
 set -o errtrace
 trap 'exit' ERR
@@ -43,14 +41,18 @@ if [[ "$#" -gt 1 || ! -x "$CreatePackageScript" ]]; then
 fi
 
 # Invoke the script and scp the resulting packages
+CurrentPath=$(pwd)
+cd $VaultRoot
 "$CreatePackageScript"
-ssh apt-alpha.maidsafe.net 'mkdir -p ~/systemd/ && mkdir -p ~/SysV-style/'
-ssh yum-alpha.maidsafe.net 'mkdir -p ~/systemd/ && mkdir -p ~/SysV-style/'
-scp "$VaultRoot"/packages/linux/safe_vault_*.tar.gz apt-alpha.maidsafe.net:~/ &
-scp "$VaultRoot"/packages/linux/systemd/safe*.deb apt-alpha.maidsafe.net:~/systemd/ &
-scp "$VaultRoot"/packages/linux/SysV-style/safe*.deb apt-alpha.maidsafe.net:~/SysV-style/ &
-scp "$VaultRoot"/packages/linux/systemd/safe*.rpm yum-alpha.maidsafe.net:~/systemd/ &
-scp "$VaultRoot"/packages/linux/SysV-style/safe*.rpm yum-alpha.maidsafe.net:~/SysV-style/ &
+cd $CurrentPath
+ssh apt.maidsafe.net 'mkdir -p ~/systemd/ && mkdir -p ~/SysV-style/'
+ssh yum.maidsafe.net 'mkdir -p ~/systemd/ && mkdir -p ~/SysV-style/'
+scp "$VaultRoot"/packages/linux/safe_vault_*.tar.gz apt.maidsafe.net:~/ &
+scp "$VaultRoot"/packages/linux/systemd/safe*.deb apt.maidsafe.net:~/systemd/ &
+scp "$VaultRoot"/packages/linux/SysV-style/safe*.deb apt.maidsafe.net:~/SysV-style/ &
+scp "$VaultRoot"/packages/linux/safe_vault_latest_version.txt apt.maidsafe.net:~/ &
+scp "$VaultRoot"/packages/linux/systemd/safe*.rpm yum.maidsafe.net:~/systemd/ &
+scp "$VaultRoot"/packages/linux/SysV-style/safe*.rpm yum.maidsafe.net:~/SysV-style/ &
+scp "$VaultRoot"/packages/linux/safe_vault_latest_version.txt yum.maidsafe.net:~/ &
 
 wait
-

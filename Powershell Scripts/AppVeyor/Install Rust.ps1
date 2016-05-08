@@ -6,7 +6,7 @@ if ($env:PLATFORM -eq "x86") {
 }
 
 # Download Rust installer
-$url = "https://github.com/Diggsey/multirust-rs-binaries/raw/master/$arch-pc-windows-gnu/multirust-rs.exe"
+$url = "https://github.com/rust-lang-nursery/multirust-rs-binaries/raw/master/$arch-pc-windows-gnu/multirust-setup.exe"
 $installer = $env:TEMP + "\multirust-rs.exe"
 (New-Object System.Net.WebClient).DownloadFile($url, $installer)
 
@@ -16,7 +16,7 @@ Set-Content $input_file "y`r`ny`r`n"
 Start-Process $installer -Wait -NoNewWindow -RedirectStandardInput $input_file
 
 # Add MultiRust to path
-$env:Path = $env:LOCALAPPDATA + "\.multirust\bin;" + $env:Path
+$env:Path = $env:USERPROFILE + "\.cargo\bin;" + $env:Path
 
 # Set the requested channel and install nightly
 # multirust update nightly
@@ -25,11 +25,17 @@ multirust default $env:RUST_VERSION
 "Rust version:"
 ""
 rustc -vV
+if (!$?) {
+    exit 99
+}
 ""
 ""
 
 "Cargo version:"
 ""
 cargo -V
+if (!$?) {
+    exit 99
+}
 ""
 ""

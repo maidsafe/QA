@@ -9,16 +9,27 @@ trap 'exit' ERR
 
 cd $TRAVIS_BUILD_DIR
 
+RUST_BACKTRACE=1
+export RUST_BACKTRACE
+
 if [[ $TRAVIS_RUST_VERSION = nightly ]]; then
   # Don't make a Clippy failure result in overall failure for now
   cargo test --no-run --features clippy || true
-  if [ ! -z "$Features" ]; then
-    cargo test --no-run --features clippy $Features || true
-  fi
+  for Feature in $Features; do
+    cargo test --no-run --features "clippy $Feature" || true
+  done
 else
-  if [ ! -z "$Features" ]; then
-    WithFeatures=" --features $Features"
+  # Run the tests for each feature
+  for Feature in $Features; do
+    cargo build --release --verbose --features $Feature
+    cargo test --release --features $Feature
+  done
+  if [ -z "$Features" ]; then
+    # There are no features, so run the default test suite
+    cargo build --release --verbose
+    cargo test --release
+  else
+    # We currently don't run the default tests if there are any features
+    cargo test --release --verbose --no-run
   fi
-  RUST_BACKTRACE=1 cargo build --release --verbose $WithFeatures
-  RUST_BACKTRACE=1 cargo test --release $WithFeatures
 fi

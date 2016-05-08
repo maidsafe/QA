@@ -5,6 +5,13 @@ cd $env:APPVEYOR_BUILD_FOLDER
 
 # Prepare test script
 $cargo_test = {
+    # Check cargo has installed properly
+    cargo -V
+    if (!$?) {
+        99 > ($env:TEMP + "\TestResult.txt")
+        return
+    }
+
     cd $env:APPVEYOR_BUILD_FOLDER
 
     # Use features if they've been set
