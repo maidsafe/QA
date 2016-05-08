@@ -123,7 +123,8 @@ exports = module.exports = function(args) {
           var dropletIps = utils.getDropletIps(createdDroplets);
           var sshCommand = 'tmux kill-session;';
           sshCommand += 'rm *.log;';
-          sshCommand += 'rm bootstrap.cache; rm %s* || true';
+          sshCommand += 'rm bootstrap.cache;';
+          sshCommand += nodeUtil.format('rm %s* || true', binaryName);
           var requests = generateSSHRequests(dropletIps, sshCommand, 0);
           async.parallel(requests, function(err) {
             if (!err) {
