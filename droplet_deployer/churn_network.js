@@ -85,12 +85,14 @@ exports = module.exports = function() {
         return invalidRange();
       }
       for (var i in range) {
-        if (isNaN(range[i])) {
-          return invalidRange();
-        }
-        range[i] = parseInt(range[i]);
-        if (!(range[i] > 0 && range[i] <= droplets.length)) {
-          return invalidRange();
+        if (range[i]) {
+          if (isNaN(range[i])) {
+            return invalidRange();
+          }
+          range[i] = parseInt(range[i]);
+          if (!(range[i] > 0 && range[i] <= droplets.length)) {
+            return invalidRange();
+          }
         }
       }
       nonChurnNodeBounds.lowerBound = range[0];
@@ -115,7 +117,7 @@ exports = module.exports = function() {
       }
       if (droplets.length === 0) {
         var msg = 'No droplets found for user %s for the selected library %s. Setup a network and try again';
-        return callback(nodeUtil.format(msg, auth.getUserName(), selectedLibraryKey))
+        return callback(nodeUtil.format(msg, auth.getUserName(), selectedLibraryKey));
       }
       callback();
     });
@@ -123,7 +125,10 @@ exports = module.exports = function() {
 
   var startChurning = function() {
     var runningNodesCount = 0;
-    var dropletsToChurn = droplets.slice(0, nonChurnNodeBounds.lowerBound - 1).concat(droplets.slice(nonChurnNodeBounds.upperBound));
+    var nodesStarted = 0;
+    var nodesStopped = 0;
+    var dropletsToChurn =
+        droplets.slice(0, nonChurnNodeBounds.lowerBound - 1).concat(droplets.slice(nonChurnNodeBounds.upperBound));
 
     var getRandomIndex = function() {
       return Math.floor(Math.random() * dropletsToChurn.length);
@@ -142,7 +147,10 @@ exports = module.exports = function() {
         }
         droplet.isRunning = true;
         runningNodesCount++;
+        nodesStarted++;
         console.log('Started: Node %s \t Current Network Size: %s', nodeIndex, runningNodesCount);
+        console.log('Completed Churn Event: %s \t Nodes Started %s \t Nodes Stopped %s',
+            nodesStarted + nodesStopped, nodesStarted, nodesStopped);
       });
     };
 
@@ -155,7 +163,10 @@ exports = module.exports = function() {
         }
         droplet.isRunning = false;
         runningNodesCount--;
+        nodesStopped++;
         console.log('Stopped: Node %s \t Current Network Size: %s', nodeIndex, runningNodesCount);
+        console.log('Completed Churn Event: %s \t Nodes Started %s \t Nodes Stopped %s',
+            nodesStarted + nodesStopped, nodesStarted, nodesStopped);
       });
     };
 
@@ -171,7 +182,9 @@ exports = module.exports = function() {
     console.log('Calculating current network size\n');
     var tasks = [];
     for (var i in droplets) {
-      tasks.push(new GetDropletStatus(droplets[i]));
+      if (droplets[i]) {
+        tasks.push(new GetDropletStatus(droplets[i]));
+      }
     }
 
     async.parallel(tasks, function(err, res) {
