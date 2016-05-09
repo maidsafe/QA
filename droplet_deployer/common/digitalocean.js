@@ -5,7 +5,7 @@ var Api = function(token, testMode) {
 
   var client = request.createClient('https://api.digitalocean.com/');
   client.headers.Authorization = 'Bearer ' + token;
-
+  console.log('Token', token);
   var filterRegions = function(regionsList) {
     var regions = [];
     var filter = [];
@@ -113,6 +113,16 @@ var Api = function(token, testMode) {
         return;
       }
       callback(null);
+    });
+  };
+
+  this.getImage = function(id, callback) {
+    client.get('v2/images/' + id, function(err, response, body) {
+      if (err || response.statusCode !== 200) {
+        callback(err || 'Failed with code ' + response.statusCode);
+        return;
+      }      
+      callback(null, body);
     });
   };
 

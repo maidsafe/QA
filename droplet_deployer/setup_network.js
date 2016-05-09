@@ -30,11 +30,11 @@ exports = module.exports = function(args) {
   var buildFlags;
   var networkSize;
   var seedNodeSize;
-  var dropletRegions;
   var createdDroplets;
   var listeningPort;
   var progressBar;
   var isUsingExistingDroplets = true;
+  var snapshotRegions;
 
   var BINARY_EXT = {
     'windows_nt': '.exe',
@@ -42,28 +42,29 @@ exports = module.exports = function(args) {
   }[os.type().toLowerCase()];
 
   // Helper fn to populate ssh requests to multiple ips
-  var generateSSHRequests = function(ips, cmd, delaySecs) {
+  var generateSSHRequests = function(ips, cmd) {
     var Handler = function(sshOptions) {
       this.run = function(cb) {
         console.log('Executing ssh commands on :: ' + sshOptions.host);
         var conn = new SshClient();
         var errorMessage = 'SSH Execution Failed for: ' + sshOptions.host;
         conn.on('ready', function() {
+          var self = this;
+          self.data = '';
           conn.exec(cmd, function(err, stream) {
             if (err) {
-              return cb(errorMessage);
+              return cb(err);
             }
+            stream.on('data', function(data) {
+              self.data += data.toString();
+            });
             stream.on('close', function(code) {
               conn.end();
-              if (utils.isInt(delaySecs) && delaySecs > 0) {
-                console.log('Commands Executed. Waiting %s seconds...', delaySecs);
-                sleep.sleep(delaySecs);
-              }
-              return cb(code === 0 ? null : errorMessage);
+              return cb(null, self.data);
             });
           });
-        }).on('error', function() {
-          return cb(errorMessage);
+        }).on('error', function(e) {
+          return cb(e);
         }).connect(sshOptions);
       };
       return this.run;
@@ -125,7 +126,7 @@ exports = module.exports = function(args) {
           sshCommand += 'rm *.log;';
           sshCommand += 'rm bootstrap.cache;';
           sshCommand += nodeUtil.format('rm %s* || true', binaryName);
-          var requests = generateSSHRequests(dropletIps, sshCommand, 0);
+          var requests = generateSSHRequests(dropletIps, sshCommand);
           async.parallel(requests, function(err) {
             if (!err) {
               console.log('Network state cleared successfully.\n');
@@ -139,20 +140,6 @@ exports = module.exports = function(args) {
           callback('Drop the network to start up a fresh network');
         }
       });
-    });
-  };
-
-  var getDropletRegions = function(callback) {
-    if (isUsingExistingDroplets) {
-      return callback();
-    }
-    digitalOcean.getAvaliableRegions(config.dropletSize, function(err, availableRegions) {
-      if (err) {
-        callback(err);
-        return;
-      }
-      dropletRegions = availableRegions;
-      callback();
     });
   };
 
@@ -296,45 +283,6 @@ exports = module.exports = function(args) {
     }, true);
   };
 
-  var getNetworkType = function(callback) {
-    // utils.postQuestion('Please select the type of network \n1. Spread \n2. Concentrated', function(type) {
-    //  type = parseInt(type);
-    //  if(isNaN(type) || type < 0 || type > 2) {
-    //    console.log('Invalid input');
-    //    getNetworkType(callback);
-    //  } else {
-    //    callback(null, type === 1);
-    //  }
-    // });
-    // TODO Passing hard coded false for indicating concentrated network - to be enhanced
-    callback(null, false);
-  };
-
-  var selectDropletRegion = function(spreadNetwork, callback) {
-    if (config.hasOwnProperty('imageRegion') && config.imageRegion) {
-      callback(null, [config.imageRegion]);
-    } else {
-      callback('imageRegion not specified in config');
-    }
-    // TODO - To be enhanced
-    /*if (spreadNetwork) {
-     callback(null, dropletRegions);
-     return;
-     }
-     var question = 'Please select a region';
-     for (var i in dropletRegions) {
-     question += ('\n' + (parseInt(i)+1) + ' ' + dropletRegions[i]);
-     }
-     utils.postQuestion(question, function(value) {
-     var index = parseInt(value);
-     if (isNaN(index) || index < 1 || index > dropletRegions.length) {
-     selectDropletRegion(spreadNetwork, callback);
-     } else {
-     callback(null, [dropletRegions[index - 1]]);
-     }
-     });*/
-  };
-
   var createDroplets = function(selectedRegions, callback) {
     if (isUsingExistingDroplets) {
       return callback(null, []);
@@ -351,7 +299,7 @@ exports = module.exports = function(args) {
     var requests = [];
     console.log('Creating droplets...');
     for (var i = 0; i < networkSize; i++) {
-      region = selectedRegions[i % selectedRegions.length];
+      region = snapshotRegions[i % selectedRegions.length];
       name = auth.getUserName() + '-' + selectedLibraryKey + '-TN-' + region + '-' + (i + 1);
       requests.push(new TempFunc(name, region, config.dropletSize, config.imageId, config.sshKeys));
     }
@@ -525,7 +473,7 @@ exports = module.exports = function(args) {
     var pattern = auth.getUserName() + '-' + selectedLibraryKey;
     var sshCommand = nodeUtil.format('rm -rf /var/www/html/%s ;', pattern);
     sshCommand += nodeUtil.format('mkdir /var/www/html/%s', pattern);
-    var request = generateSSHRequests([config.dropletFileHost], sshCommand, 0);
+    var request = generateSSHRequests([config.dropletFileHost], sshCommand);
     async.series(request, function(err) {
       if (err) {
         console.log('Failed clearing up droplet file host.\n');
@@ -562,27 +510,71 @@ exports = module.exports = function(args) {
     sshCommand += 'mv ~/settings.yml ~/.teamocil/ && ';
     sshCommand += '. ~/.bash_profile && ';
     sshCommand += 'teamocil settings\"';
-    var seedIps = dropletIps.splice(0, seedNodeSize);
-    var seedRequests = generateSSHRequests(seedIps, sshCommand, 60);
-    var normalRequests = generateSSHRequests(dropletIps, sshCommand, 0);
+    var nodeListeningGrepCommand = 'grep \"Running listener\" Node.log';
+    var routingTableGrepCommand = 'grep \"Routing Table size:\" Node.log';
 
-    console.log('Starting seed nodes in series');
-    async.series(seedRequests, function(err) {
+    var seedIps = dropletIps.splice(0, seedNodeSize);
+    var seedRequests = generateSSHRequests(seedIps, sshCommand);
+    var normalRequests = generateSSHRequests(dropletIps, sshCommand);
+
+    var WaitForNodeToStart = function(node, grepCommand) {
+      this.run = function(callback) {
+        console.log('Waiting for node to start.');
+        generateSSHRequests([ node ], grepCommand)[0](function(err, data) {
+          if (err) {
+            return callback(err);
+          }
+          if (!data) {
+            return setTimeout(10000, waitForNodeToStart);
+          }
+          console.log('Node started.');
+          return callback();
+        });
+      };
+
+      return this.run;
+    };
+
+    var onFirstSeedStarted = function(err) {
       if (err) {
-        console.log('Failed starting seed nodes.');
-        return callback(err);
+        throw 'First seed node failed to start ' + err;
       }
-      console.log('Seed nodes started.\n');
-      console.log('Starting remaining nodes in parallel');
-      async.parallel(normalRequests, function(err) {
-        if (!err) {
-          console.log('All droplet nodes started.\n');
-          return callback(null);
+      console.log('Starting %d seed nodes in series', seedIps.length - 1);
+      async.series(seedRequests.slice(1, seedRequests.length), function(err) {
+        if (err) {
+          console.log('Failed starting seed nodes.');
+          return callback(err);
         }
 
-        console.log('Failed starting normal nodes.');
-        callback(err);
+        var nodesToWait = [];
+        seedIps.slice(1, seedIps.length).forEach(function(ip) {
+          nodesToWait.push(new WaitForNodeToStart(ip, routingTableGrepCommand));
+        });
+        async.series(nodesToWait, function(err) {
+          if (err) {
+            throw 'Failed to start seed nodes ' + err;
+          }
+          console.log('Seed nodes started.\n');
+          console.log('Starting remaining nodes in parallel');
+          async.parallel(normalRequests, function(err) {
+            if (!err) {
+              console.log('All droplet nodes started.\n');
+              return callback(null);
+            }
+            console.log('Failed starting normal nodes.');
+            callback(err);
+          });
+        });
       });
+    };
+
+    console.log('Starting first seed node');
+    seedRequests[0](function(err) {
+      if (err) {
+        console.log('First seed node failed to start');
+        throw err;
+      }
+      new WaitForNodeToStart(seedIps[0], nodeListeningGrepCommand)(onFirstSeedStarted);
     });
   };
 
@@ -602,6 +594,20 @@ exports = module.exports = function(args) {
     callback(null);
   };
 
+  var getSnapshotRegions = function(callback) {
+    if (!config.imageId) {
+      throw 'imageId not found in the config file';
+    }
+    console.log('getting droplet snapshot regions');
+    digitalOcean.getImage(config.imageId, function(err, image) {
+      if (err) {
+        return callback(err);
+      }
+      snapshotRegions = image.regions;
+      callback();
+    });
+  };
+
   var buildLibrary = function(option) {
     var libraries = [];
     var waterfallTasks = [];
@@ -617,8 +623,8 @@ exports = module.exports = function(args) {
     binaryName = (libraryConfig.hasOwnProperty('example') ? libraryConfig.example : libraryConfig.binary) + BINARY_EXT;
 
     waterfallTasks.push(
+        getSnapshotRegions,
         validateUniqueNetwork,
-        getDropletRegions,
         getRepositoryLocation,
         clone,
         getBuildType,
@@ -630,8 +636,6 @@ exports = module.exports = function(args) {
 
     waterfallTasks.push(
         getListeningPort,
-        getNetworkType,
-        selectDropletRegion,
         createDroplets,
         getDroplets,
         clearOutputFolder,
@@ -653,6 +657,7 @@ exports = module.exports = function(args) {
         startTmuxSession,
         printResult
     );
+
     async.waterfall(waterfallTasks, function(err) {
       if (err) {
         console.error(err);
