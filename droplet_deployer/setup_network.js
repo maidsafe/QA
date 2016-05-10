@@ -283,7 +283,7 @@ exports = module.exports = function(args) {
     }, true);
   };
 
-  var createDroplets = function(selectedRegions, callback) {
+  var createDroplets = function(callback) {
     if (isUsingExistingDroplets) {
       return callback(null, []);
     }
@@ -299,7 +299,7 @@ exports = module.exports = function(args) {
     var requests = [];
     console.log('Creating droplets...');
     for (var i = 0; i < networkSize; i++) {
-      region = snapshotRegions[i % selectedRegions.length];
+      region = snapshotRegions[i % snapshotRegions.length];
       name = auth.getUserName() + '-' + selectedLibraryKey + '-TN-' + region + '-' + (i + 1);
       requests.push(new TempFunc(name, region, config.dropletSize, config.imageId, config.sshKeys));
     }
@@ -525,7 +525,7 @@ exports = module.exports = function(args) {
             return callback(err);
           }
           if (!data) {
-            return setTimeout(10000, waitForNodeToStart);
+            return setTimeout(WaitForNodeToStart, 10000, node, grepCommand);  // HERE
           }
           console.log('Node started.');
           return callback();
@@ -599,11 +599,11 @@ exports = module.exports = function(args) {
       throw 'imageId not found in the config file';
     }
     console.log('getting droplet snapshot regions');
-    digitalOcean.getImage(config.imageId, function(err, image) {
+    digitalOcean.getImage(config.imageId, function(err, res) {
       if (err) {
         return callback(err);
       }
-      snapshotRegions = image.regions;
+      snapshotRegions = res.image.regions;
       callback();
     });
   };

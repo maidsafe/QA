@@ -5,7 +5,6 @@ var Api = function(token, testMode) {
 
   var client = request.createClient('https://api.digitalocean.com/');
   client.headers.Authorization = 'Bearer ' + token;
-  console.log('Token', token);
   var filterRegions = function(regionsList) {
     var regions = [];
     var filter = [];
