@@ -526,7 +526,7 @@ exports = module.exports = function(args) {
           }
           if (!data) {
             return setTimeout(function() {
-              self.run(callback);
+              new WaitForNodeToStart(node, grepCommand)(callback);
             }, 10000);
           }
           console.log('Node started.');
@@ -606,7 +606,6 @@ exports = module.exports = function(args) {
     if (!config.imageId) {
       throw 'imageId not found in the config file';
     }
-    console.log('getting droplet snapshot regions');
     digitalOcean.getImage(config.imageId, function(err, res) {
       if (err) {
         return callback(err);

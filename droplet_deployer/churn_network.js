@@ -206,6 +206,7 @@ exports = module.exports = function() {
       /*jshint forin: false */
       for (var i in res) {
         /*jshint forin: true */
+        // TODO remove the jshint lookfunc error instead of suppressing it
         /*jshint loopfunc: true */
         dropletsToChurn.some(function(el) {
           /*jshint loopfunc: false */
