@@ -3,6 +3,7 @@
 1. Create a new droplet from the existing "Droplet Deployer" [snapshot][0].
 1. Make whatever changes are required (user is `qa`, password is held in [private Assets repo][1]).
 1. Shutdown the droplet and take a new snapshot called `Droplet Deployer`.
+1. Replicate [the snapshot][0] to all regions (click the "More" option, then "Add to Region").
 1. Rename the [old snapshot][0] to `Old Droplet Deployer` (check "Created" values).
 1. [Generate a new Personal Access Token][2].
 1. To get the ID of the newly-created snapshot, run `curl -sX GET -H "Content-Type: application/json" -H "Authorization: Bearer <token here>" "https://api.digitalocean.com/v2/images?private=true" | sed -n 's/.*"id":\([^,]*\),"name":"Droplet Deployer".*/\n\1\n\n/p'`
