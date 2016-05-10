@@ -120,7 +120,7 @@ var Api = function(token, testMode) {
       if (err || response.statusCode !== 200) {
         callback(err || 'Failed with code ' + response.statusCode);
         return;
-      }      
+      }
       callback(null, body);
     });
   };

@@ -17,7 +17,6 @@ exports = module.exports = function(args) {
   var ProgressBar = require('progress');
   var Table = require('cli-table');
   var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken(), config.testMode);
-  var sleep = require('sleep');
 
   var ADVANCED_ARG = 'advanced';
 
@@ -53,12 +52,12 @@ exports = module.exports = function(args) {
           self.data = '';
           conn.exec(cmd, function(err, stream) {
             if (err) {
-              return cb(err);
+              return cb(errorMessage + '-' + err.message);
             }
             stream.on('data', function(data) {
               self.data += data.toString();
             });
-            stream.on('close', function(code) {
+            stream.on('close', function() {
               conn.end();
               return cb(null, self.data);
             });
@@ -89,7 +88,7 @@ exports = module.exports = function(args) {
     for (var i = 0; i < seedNodeSize; i++) {
       ip = createdDroplets[i].networks.v4[0].ip_address;
       endPoints.push({
-        tcp_acceptors: [ip + ':' + stdListeningPort],
+        tcp_acceptors: [ ip + ':' + stdListeningPort ],
         tcp_mapper_servers: []
       });
     }
@@ -473,7 +472,7 @@ exports = module.exports = function(args) {
     var pattern = auth.getUserName() + '-' + selectedLibraryKey;
     var sshCommand = nodeUtil.format('rm -rf /var/www/html/%s ;', pattern);
     sshCommand += nodeUtil.format('mkdir /var/www/html/%s', pattern);
-    var request = generateSSHRequests([config.dropletFileHost], sshCommand);
+    var request = generateSSHRequests([ config.dropletFileHost ], sshCommand);
     async.series(request, function(err) {
       if (err) {
         console.log('Failed clearing up droplet file host.\n');
@@ -519,13 +518,16 @@ exports = module.exports = function(args) {
 
     var WaitForNodeToStart = function(node, grepCommand) {
       this.run = function(callback) {
+        var self = this;
         console.log('Waiting for node to start.');
         generateSSHRequests([ node ], grepCommand)[0](function(err, data) {
           if (err) {
             return callback(err);
           }
           if (!data) {
-            return setTimeout(WaitForNodeToStart, 10000, node, grepCommand);  // HERE
+            return setTimeout(function() {
+              self.run(callback);
+            }, 10000);
           }
           console.log('Node started.');
           return callback();
@@ -540,30 +542,36 @@ exports = module.exports = function(args) {
         throw 'First seed node failed to start ' + err;
       }
       console.log('Starting %d seed nodes in series', seedIps.length - 1);
-      async.series(seedRequests.slice(1, seedRequests.length), function(err) {
+      var StartSeed = function(ip, seedRequest) {
+        this.run = function(callback) {
+          seedRequest(function(err) {
+            if (err) {
+              return callback(err);
+            }
+            new WaitForNodeToStart(ip, routingTableGrepCommand)(callback);
+          });
+        };
+        return this.run;
+      };
+      var seedNodeStartRequests = [];
+      seedRequests.slice(1, seedRequests.length).forEach(function(seedRequest, index) {
+        seedNodeStartRequests.push(new StartSeed(seedIps[index], seedRequest));
+      });
+      async.series(seedNodeStartRequests, function(err) {
         if (err) {
           console.log('Failed starting seed nodes.');
           return callback(err);
         }
 
-        var nodesToWait = [];
-        seedIps.slice(1, seedIps.length).forEach(function(ip) {
-          nodesToWait.push(new WaitForNodeToStart(ip, routingTableGrepCommand));
-        });
-        async.series(nodesToWait, function(err) {
-          if (err) {
-            throw 'Failed to start seed nodes ' + err;
+        console.log('Seed nodes started.\n');
+        console.log('Starting remaining nodes in parallel');
+        async.parallel(normalRequests, function(err) {
+          if (!err) {
+            console.log('All droplet nodes started.\n');
+            return callback(null);
           }
-          console.log('Seed nodes started.\n');
-          console.log('Starting remaining nodes in parallel');
-          async.parallel(normalRequests, function(err) {
-            if (!err) {
-              console.log('All droplet nodes started.\n');
-              return callback(null);
-            }
-            console.log('Failed starting normal nodes.');
-            callback(err);
-          });
+          console.log('Failed starting normal nodes.');
+          callback(err);
         });
       });
     };
@@ -581,13 +589,13 @@ exports = module.exports = function(args) {
   var printResult = function(callback) {
     console.log('\n');
     var table = new Table({
-      head: ['Droplet Name', 'SSH Command'],
-      colWidths: [40, 105]
+      head: [ 'Droplet Name', 'SSH Command' ],
+      colWidths: [ 40, 105 ]
     });
     for (var i in createdDroplets) {
       if (createdDroplets[i]) {
-        table.push([createdDroplets[i].name, 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -t ' +
-        config.dropletUser + '@' + createdDroplets[i].networks.v4[0].ip_address + ' \"tmux attach\"']);
+        table.push([ createdDroplets[i].name, 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -t ' +
+        config.dropletUser + '@' + createdDroplets[i].networks.v4[0].ip_address + ' \"tmux attach\"' ]);
       }
     }
     console.log(table.toString());

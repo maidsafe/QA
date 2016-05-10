@@ -58,7 +58,11 @@ exports = module.exports = function() {
       return this.run;
     };
     var sshOptions = {
+      /*jshint camelcase: false */
+      // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
       host: droplet.networks.v4[0].ip_address,
+      // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
+      /*jshint camelcase: true */
       username: config.dropletUser,
       password: auth.getDropletUserPassword(),
       readyTimeout: 99999
@@ -143,7 +147,11 @@ exports = module.exports = function() {
       var nodeIndex = getNodeIndexFromName(droplet.name);
       executeCommandOnDroplet(droplet, cmd, function(err) {
         if (err) {
+          /*jshint camelcase: false */
+          // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
           return console.log('Failed to start: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
+          // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
+          /*jshint camelcase: true */
         }
         droplet.isRunning = true;
         runningNodesCount++;
@@ -159,7 +167,11 @@ exports = module.exports = function() {
       var nodeIndex = getNodeIndexFromName(droplet.name);
       executeCommandOnDroplet(droplet, cmd, function(err) {
         if (err) {
+          /*jshint camelcase: false */
+          // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
           return console.log('Failed to stop: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
+          // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
+          /*jshint camelcase: true */
         }
         droplet.isRunning = false;
         runningNodesCount--;
@@ -172,7 +184,7 @@ exports = module.exports = function() {
 
     var churn = function() {
       var droplet = dropletsToChurn[getRandomIndex()];
-      if(droplet.isRunning) {
+      if (droplet.isRunning) {
         new StopNode(droplet);
       } else {
         new StartNode(droplet);
@@ -191,14 +203,17 @@ exports = module.exports = function() {
       if (err) {
         throw err;
       }
+      /*jshint forin: false */
       for (var i in res) {
-        dropletsToChurn.some(function (el) {
+        /*jshint forin: true */
+        /*jshint loopfunc: true */
+        dropletsToChurn.some(function(el) {
+          /*jshint loopfunc: false */
           if (el.name.indexOf(droplets[i].name) === 0) {
             el.isRunning = res[i];
             return true;
           }
         });
-
         if (res[i]) {
           runningNodesCount++;
         }
@@ -211,7 +226,9 @@ exports = module.exports = function() {
 
   var prepare = function(selectedOption) {
     var i = 0;
+    /*jshint forin: false */
     for (var key in config.libraries) {
+      /*jshint forin: true */
       i++;
       if (i === selectedOption) {
         selectedLibraryKey = key;
