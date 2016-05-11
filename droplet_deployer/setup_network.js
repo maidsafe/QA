@@ -44,7 +44,6 @@ exports = module.exports = function(args) {
   var generateSSHRequests = function(ips, cmd) {
     var Handler = function(sshOptions) {
       this.run = function(cb) {
-        console.log('Executing ssh commands on :: ' + sshOptions.host);
         var conn = new SshClient();
         var errorMessage = 'SSH Execution Failed for: ' + sshOptions.host;
         conn.on('ready', function() {
@@ -119,7 +118,7 @@ exports = module.exports = function(args) {
           function(canStop) {
         if (canStop && canStop.toLowerCase() === 'y') {
           createdDroplets = existingDroplets;
-          console.log('Clearing previous network state\n');
+          console.log('Clearing previous network state');
           var dropletIps = utils.getDropletIps(createdDroplets);
           var sshCommand = 'tmux kill-session;';
           sshCommand += 'rm *.log;';
@@ -282,7 +281,23 @@ exports = module.exports = function(args) {
     }, true);
   };
 
-  var createDroplets = function(callback) {
+  var getNetworkType = function(callback) {
+    if (isUsingExistingDroplets) {
+      return callback(null, true);
+    }
+
+    utils.postQuestion('Please select the type of network \n1. Concentrated\n2. Spread', function(type) {
+      type = parseInt(type);
+      if (!utils.isInt(type) || (type !== 1 && type !== 2)) {
+        console.log('Invalid input');
+        return getNetworkType(callback);
+      }
+
+      callback(null, type === 1);
+    });
+  };
+
+  var createDroplets = function(isConcentratedNetwork, callback) {
     if (isUsingExistingDroplets) {
       return callback(null, []);
     }
@@ -298,7 +313,11 @@ exports = module.exports = function(args) {
     var requests = [];
     console.log('Creating droplets...');
     for (var i = 0; i < networkSize; i++) {
-      region = snapshotRegions[i % snapshotRegions.length];
+      if (snapshotRegions.indexOf(config.concentratedRegion) < 0) {
+        return callback('%s region not found for given snapshot to create concentrated network.',
+                        config.concentratedRegion);
+      }
+      region = isConcentratedNetwork ? config.concentratedRegion : snapshotRegions[i % snapshotRegions.length];
       name = auth.getUserName() + '-' + selectedLibraryKey + '-TN-' + region + '-' + (i + 1);
       requests.push(new TempFunc(name, region, config.dropletSize, config.imageId, config.sshKeys));
     }
@@ -516,10 +535,28 @@ exports = module.exports = function(args) {
     var seedRequests = generateSSHRequests(seedIps, sshCommand);
     var normalRequests = generateSSHRequests(dropletIps, sshCommand);
 
+    var seedNodeProgress = new ProgressBar('Starting seed nodes [:bar] :current/:total :percent', {
+        complete: '=',
+        incomplete: ' ',
+        width: 20,
+        total: seedNodeSize
+      });
+    seedNodeProgress.tick(0);
+
+    var TickProgress = function() {
+      this.run = function(callback) {
+        seedNodeProgress.tick(1);
+        return callback(null);
+      };
+      return this.run;
+    };
+
     var WaitForNodeToStart = function(node, grepCommand) {
       this.run = function(callback) {
-        var self = this;
-        console.log('Waiting for node to start.');
+        // Suppress waiting for grep messages when running crust examples
+        if (selectedLibraryKey.toLowerCase().indexOf('crust') > -1) {
+          return callback(null);
+        }
         generateSSHRequests([ node ], grepCommand)[0](function(err, data) {
           if (err) {
             return callback(err);
@@ -529,8 +566,7 @@ exports = module.exports = function(args) {
               new WaitForNodeToStart(node, grepCommand)(callback);
             }, 10000);
           }
-          console.log('Node started.');
-          return callback();
+          return callback(null);
         });
       };
 
@@ -541,7 +577,8 @@ exports = module.exports = function(args) {
       if (err) {
         throw 'First seed node failed to start ' + err;
       }
-      console.log('Starting %d seed nodes in series', seedIps.length - 1);
+
+      seedNodeProgress.tick(1);
       var StartSeed = function(ip, seedRequest) {
         this.run = function(callback) {
           seedRequest(function(err) {
@@ -556,6 +593,7 @@ exports = module.exports = function(args) {
       var seedNodeStartRequests = [];
       seedRequests.slice(1, seedRequests.length).forEach(function(seedRequest, index) {
         seedNodeStartRequests.push(new StartSeed(seedIps[index], seedRequest));
+        seedNodeStartRequests.push(new TickProgress());
       });
       async.series(seedNodeStartRequests, function(err) {
         if (err) {
@@ -563,7 +601,6 @@ exports = module.exports = function(args) {
           return callback(err);
         }
 
-        console.log('Seed nodes started.\n');
         console.log('Starting remaining nodes in parallel');
         async.parallel(normalRequests, function(err) {
           if (!err) {
@@ -576,7 +613,6 @@ exports = module.exports = function(args) {
       });
     };
 
-    console.log('Starting first seed node');
     seedRequests[0](function(err) {
       if (err) {
         console.log('First seed node failed to start');
@@ -643,6 +679,7 @@ exports = module.exports = function(args) {
 
     waterfallTasks.push(
         getListeningPort,
+        getNetworkType,
         createDroplets,
         getDroplets,
         clearOutputFolder,

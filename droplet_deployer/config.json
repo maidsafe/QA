@@ -36,7 +36,7 @@
   "listeningPort": 5483,
   "dropletSize": "1gb",
   "imageId": 17238207,
-  "imageRegion": "lon1",
+  "concentratedRegion": "lon1",
   "sshKeys": [618734, 873713, 906915, 948546],
   "testMode": false
 }
