@@ -17,7 +17,6 @@ exports = module.exports = function(args) {
   var ProgressBar = require('progress');
   var Table = require('cli-table');
   var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken(), config.testMode);
-  var sleep = require('sleep');
 
   var ADVANCED_ARG = 'advanced';
 
@@ -30,11 +29,11 @@ exports = module.exports = function(args) {
   var buildFlags;
   var networkSize;
   var seedNodeSize;
-  var dropletRegions;
   var createdDroplets;
   var listeningPort;
   var progressBar;
   var isUsingExistingDroplets = true;
+  var snapshotRegions;
 
   var BINARY_EXT = {
     'windows_nt': '.exe',
@@ -42,28 +41,28 @@ exports = module.exports = function(args) {
   }[os.type().toLowerCase()];
 
   // Helper fn to populate ssh requests to multiple ips
-  var generateSSHRequests = function(ips, cmd, delaySecs) {
+  var generateSSHRequests = function(ips, cmd) {
     var Handler = function(sshOptions) {
       this.run = function(cb) {
-        console.log('Executing ssh commands on :: ' + sshOptions.host);
         var conn = new SshClient();
         var errorMessage = 'SSH Execution Failed for: ' + sshOptions.host;
         conn.on('ready', function() {
+          var self = this;
+          self.data = '';
           conn.exec(cmd, function(err, stream) {
             if (err) {
-              return cb(errorMessage);
+              return cb(errorMessage + '-' + err.message);
             }
-            stream.on('close', function(code) {
+            stream.on('data', function(data) {
+              self.data += data.toString();
+            });
+            stream.on('close', function() {
               conn.end();
-              if (utils.isInt(delaySecs) && delaySecs > 0) {
-                console.log('Commands Executed. Waiting %s seconds...', delaySecs);
-                sleep.sleep(delaySecs);
-              }
-              return cb(code === 0 ? null : errorMessage);
+              return cb(null, self.data);
             });
           });
-        }).on('error', function() {
-          return cb(errorMessage);
+        }).on('error', function(e) {
+          return cb(e);
         }).connect(sshOptions);
       };
       return this.run;
@@ -88,7 +87,7 @@ exports = module.exports = function(args) {
     for (var i = 0; i < seedNodeSize; i++) {
       ip = createdDroplets[i].networks.v4[0].ip_address;
       endPoints.push({
-        tcp_acceptors: [ip + ':' + stdListeningPort],
+        tcp_acceptors: [ ip + ':' + stdListeningPort ],
         tcp_mapper_servers: []
       });
     }
@@ -119,13 +118,13 @@ exports = module.exports = function(args) {
           function(canStop) {
         if (canStop && canStop.toLowerCase() === 'y') {
           createdDroplets = existingDroplets;
-          console.log('Clearing previous network state\n');
+          console.log('Clearing previous network state');
           var dropletIps = utils.getDropletIps(createdDroplets);
           var sshCommand = 'tmux kill-session;';
           sshCommand += 'rm *.log;';
           sshCommand += 'rm bootstrap.cache;';
           sshCommand += nodeUtil.format('rm %s* || true', binaryName);
-          var requests = generateSSHRequests(dropletIps, sshCommand, 0);
+          var requests = generateSSHRequests(dropletIps, sshCommand);
           async.parallel(requests, function(err) {
             if (!err) {
               console.log('Network state cleared successfully.\n');
@@ -139,20 +138,6 @@ exports = module.exports = function(args) {
           callback('Drop the network to start up a fresh network');
         }
       });
-    });
-  };
-
-  var getDropletRegions = function(callback) {
-    if (isUsingExistingDroplets) {
-      return callback();
-    }
-    digitalOcean.getAvaliableRegions(config.dropletSize, function(err, availableRegions) {
-      if (err) {
-        callback(err);
-        return;
-      }
-      dropletRegions = availableRegions;
-      callback();
     });
   };
 
@@ -297,45 +282,22 @@ exports = module.exports = function(args) {
   };
 
   var getNetworkType = function(callback) {
-    // utils.postQuestion('Please select the type of network \n1. Spread \n2. Concentrated', function(type) {
-    //  type = parseInt(type);
-    //  if(isNaN(type) || type < 0 || type > 2) {
-    //    console.log('Invalid input');
-    //    getNetworkType(callback);
-    //  } else {
-    //    callback(null, type === 1);
-    //  }
-    // });
-    // TODO Passing hard coded false for indicating concentrated network - to be enhanced
-    callback(null, false);
-  };
-
-  var selectDropletRegion = function(spreadNetwork, callback) {
-    if (config.hasOwnProperty('imageRegion') && config.imageRegion) {
-      callback(null, [config.imageRegion]);
-    } else {
-      callback('imageRegion not specified in config');
+    if (isUsingExistingDroplets) {
+      return callback(null, true);
     }
-    // TODO - To be enhanced
-    /*if (spreadNetwork) {
-     callback(null, dropletRegions);
-     return;
-     }
-     var question = 'Please select a region';
-     for (var i in dropletRegions) {
-     question += ('\n' + (parseInt(i)+1) + ' ' + dropletRegions[i]);
-     }
-     utils.postQuestion(question, function(value) {
-     var index = parseInt(value);
-     if (isNaN(index) || index < 1 || index > dropletRegions.length) {
-     selectDropletRegion(spreadNetwork, callback);
-     } else {
-     callback(null, [dropletRegions[index - 1]]);
-     }
-     });*/
+
+    utils.postQuestion('Please select the type of network \n1. Concentrated\n2. Spread', function(type) {
+      type = parseInt(type);
+      if (!utils.isInt(type) || (type !== 1 && type !== 2)) {
+        console.log('Invalid input');
+        return getNetworkType(callback);
+      }
+
+      callback(null, type === 1);
+    });
   };
 
-  var createDroplets = function(selectedRegions, callback) {
+  var createDroplets = function(isConcentratedNetwork, callback) {
     if (isUsingExistingDroplets) {
       return callback(null, []);
     }
@@ -351,7 +313,11 @@ exports = module.exports = function(args) {
     var requests = [];
     console.log('Creating droplets...');
     for (var i = 0; i < networkSize; i++) {
-      region = selectedRegions[i % selectedRegions.length];
+      if (snapshotRegions.indexOf(config.concentratedRegion) < 0) {
+        return callback('%s region not found for given snapshot to create concentrated network.',
+                        config.concentratedRegion);
+      }
+      region = isConcentratedNetwork ? config.concentratedRegion : snapshotRegions[i % snapshotRegions.length];
       name = auth.getUserName() + '-' + selectedLibraryKey + '-TN-' + region + '-' + (i + 1);
       requests.push(new TempFunc(name, region, config.dropletSize, config.imageId, config.sshKeys));
     }
@@ -525,7 +491,7 @@ exports = module.exports = function(args) {
     var pattern = auth.getUserName() + '-' + selectedLibraryKey;
     var sshCommand = nodeUtil.format('rm -rf /var/www/html/%s ;', pattern);
     sshCommand += nodeUtil.format('mkdir /var/www/html/%s', pattern);
-    var request = generateSSHRequests([config.dropletFileHost], sshCommand, 0);
+    var request = generateSSHRequests([ config.dropletFileHost ], sshCommand);
     async.series(request, function(err) {
       if (err) {
         console.log('Failed clearing up droplet file host.\n');
@@ -562,44 +528,127 @@ exports = module.exports = function(args) {
     sshCommand += 'mv ~/settings.yml ~/.teamocil/ && ';
     sshCommand += '. ~/.bash_profile && ';
     sshCommand += 'teamocil settings\"';
-    var seedIps = dropletIps.splice(0, seedNodeSize);
-    var seedRequests = generateSSHRequests(seedIps, sshCommand, 60);
-    var normalRequests = generateSSHRequests(dropletIps, sshCommand, 0);
+    var nodeListeningGrepCommand = 'grep \"Running listener\" Node.log';
+    var routingTableGrepCommand = 'grep \"Routing Table size:\" Node.log';
 
-    console.log('Starting seed nodes in series');
-    async.series(seedRequests, function(err) {
-      if (err) {
-        console.log('Failed starting seed nodes.');
-        return callback(err);
-      }
-      console.log('Seed nodes started.\n');
-      console.log('Starting remaining nodes in parallel');
-      async.parallel(normalRequests, function(err) {
-        if (!err) {
-          console.log('All droplet nodes started.\n');
+    var seedIps = dropletIps.splice(0, seedNodeSize);
+    var seedRequests = generateSSHRequests(seedIps, sshCommand);
+    var normalRequests = generateSSHRequests(dropletIps, sshCommand);
+
+    var seedNodeProgress = new ProgressBar('Starting seed nodes [:bar] :current/:total :percent', {
+        complete: '=',
+        incomplete: ' ',
+        width: 20,
+        total: seedNodeSize
+      });
+    seedNodeProgress.tick(0);
+
+    var TickProgress = function() {
+      this.run = function(callback) {
+        seedNodeProgress.tick(1);
+        return callback(null);
+      };
+      return this.run;
+    };
+
+    var WaitForNodeToStart = function(node, grepCommand) {
+      this.run = function(callback) {
+        // Suppress waiting for grep messages when running crust examples
+        if (selectedLibraryKey.toLowerCase().indexOf('crust') > -1) {
           return callback(null);
         }
+        generateSSHRequests([ node ], grepCommand)[0](function(err, data) {
+          if (err) {
+            return callback(err);
+          }
+          if (!data) {
+            return setTimeout(function() {
+              new WaitForNodeToStart(node, grepCommand)(callback);
+            }, 10000);
+          }
+          return callback(null);
+        });
+      };
 
-        console.log('Failed starting normal nodes.');
-        callback(err);
+      return this.run;
+    };
+
+    var onFirstSeedStarted = function(err) {
+      if (err) {
+        throw 'First seed node failed to start ' + err;
+      }
+
+      seedNodeProgress.tick(1);
+      var StartSeed = function(ip, seedRequest) {
+        this.run = function(callback) {
+          seedRequest(function(err) {
+            if (err) {
+              return callback(err);
+            }
+            new WaitForNodeToStart(ip, routingTableGrepCommand)(callback);
+          });
+        };
+        return this.run;
+      };
+      var seedNodeStartRequests = [];
+      seedRequests.slice(1, seedRequests.length).forEach(function(seedRequest, index) {
+        seedNodeStartRequests.push(new StartSeed(seedIps[index], seedRequest));
+        seedNodeStartRequests.push(new TickProgress());
       });
+      async.series(seedNodeStartRequests, function(err) {
+        if (err) {
+          console.log('Failed starting seed nodes.');
+          return callback(err);
+        }
+
+        console.log('Starting remaining nodes in parallel');
+        async.parallel(normalRequests, function(err) {
+          if (!err) {
+            console.log('All droplet nodes started.\n');
+            return callback(null);
+          }
+          console.log('Failed starting normal nodes.');
+          callback(err);
+        });
+      });
+    };
+
+    seedRequests[0](function(err) {
+      if (err) {
+        console.log('First seed node failed to start');
+        throw err;
+      }
+      new WaitForNodeToStart(seedIps[0], nodeListeningGrepCommand)(onFirstSeedStarted);
     });
   };
 
   var printResult = function(callback) {
     console.log('\n');
     var table = new Table({
-      head: ['Droplet Name', 'SSH Command'],
-      colWidths: [40, 105]
+      head: [ 'Droplet Name', 'SSH Command' ],
+      colWidths: [ 40, 105 ]
     });
     for (var i in createdDroplets) {
       if (createdDroplets[i]) {
-        table.push([createdDroplets[i].name, 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -t ' +
-        config.dropletUser + '@' + createdDroplets[i].networks.v4[0].ip_address + ' \"tmux attach\"']);
+        table.push([ createdDroplets[i].name, 'ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -t ' +
+        config.dropletUser + '@' + createdDroplets[i].networks.v4[0].ip_address + ' \"tmux attach\"' ]);
       }
     }
     console.log(table.toString());
     callback(null);
+  };
+
+  var getSnapshotRegions = function(callback) {
+    if (!config.imageId) {
+      throw 'imageId not found in the config file';
+    }
+    digitalOcean.getImage(config.imageId, function(err, res) {
+      if (err) {
+        return callback(err);
+      }
+      snapshotRegions = res.image.regions;
+      callback();
+    });
   };
 
   var buildLibrary = function(option) {
@@ -617,8 +666,8 @@ exports = module.exports = function(args) {
     binaryName = (libraryConfig.hasOwnProperty('example') ? libraryConfig.example : libraryConfig.binary) + BINARY_EXT;
 
     waterfallTasks.push(
+        getSnapshotRegions,
         validateUniqueNetwork,
-        getDropletRegions,
         getRepositoryLocation,
         clone,
         getBuildType,
@@ -631,7 +680,6 @@ exports = module.exports = function(args) {
     waterfallTasks.push(
         getListeningPort,
         getNetworkType,
-        selectDropletRegion,
         createDroplets,
         getDroplets,
         clearOutputFolder,
@@ -653,6 +701,7 @@ exports = module.exports = function(args) {
         startTmuxSession,
         printResult
     );
+
     async.waterfall(waterfallTasks, function(err) {
       if (err) {
         console.error(err);

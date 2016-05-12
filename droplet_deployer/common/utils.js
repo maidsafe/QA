@@ -83,7 +83,11 @@ var Utils = function() {
     var ips = [];
     for (var i in droplets) {
       if (droplets[i]) {
+        /*jshint camelcase: false */
+        // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
         ips.push(droplets[i].networks.v4[0].ip_address);
+        // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
+        /*jshint camelcase: true */
       }
     }
     return ips;
