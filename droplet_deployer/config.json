@@ -25,12 +25,12 @@
     "Routing-1": {
       "url": "git@github.com:maidsafe/routing.git",
       "example": "key_value_store",
-      "tmuxCommand": "./key_value_store"
+      "tmuxCommand": "./key_value_store $IS_FIRST_NODE"
     },
     "Vault-1": {
       "url": "git@github.com:maidsafe/safe_vault.git",
       "binary": "safe_vault",
-      "tmuxCommand": "./safe_vault"
+      "tmuxCommand": "./safe_vault $IS_FIRST_NODE"
     }
   },
   "listeningPort": 5483,

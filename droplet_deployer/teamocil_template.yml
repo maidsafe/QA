@@ -3,7 +3,9 @@ windows:
     root: ~
     focus: true
     panes:
-     - %TMUX_CMD%
+      - commands:
+        - if [ -e IS_FIRST_NODE ]; then export IS_FIRST_NODE=-f; fi
+        - %TMUX_CMD%
   - name: file_log
     root: ~
     panes:
