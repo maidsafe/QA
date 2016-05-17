@@ -521,35 +521,23 @@ exports = module.exports = function(args) {
   var startTmuxSession = function(callback) {
     var dropletIps = utils.getDropletIps(createdDroplets);
     var pattern = auth.getUserName() + '-' + selectedLibraryKey;
-    var sshCommand = 'tmux new-session -d \"';
-    sshCommand += nodeUtil.format('wget -r -nH -nd -np -R index.html* http://%s/%s/ && ',
-                                  config.dropletFileHost, pattern);
-    sshCommand += nodeUtil.format('chmod +x %s && ', binaryName);
-    sshCommand += 'mv ~/settings.yml ~/.teamocil/ && ';
-    sshCommand += '. ~/.bash_profile && ';
-    sshCommand += 'teamocil settings\"';
-    var nodeListeningGrepCommand = 'grep \"Running listener\" Node.log';
-    var routingTableGrepCommand = 'grep \"Routing Table size:\" Node.log';
+    var firstNodeOnlyCommand = 'touch ~/IS_FIRST_NODE && ';
+    var otherNodeOnlyCommand = 'rm ~/IS_FIRST_NODE; ';
+    var normalNodeCommands = nodeUtil.format('wget -r -nH -nd -np -R index.html* http://%s/%s/ && ',
+      config.dropletFileHost, pattern);
+    normalNodeCommands += nodeUtil.format('chmod +x %s && ', binaryName);
+    normalNodeCommands += 'mv ~/settings.yml ~/.teamocil/ && ';
+    normalNodeCommands += '. ~/.bash_profile && ';
+    normalNodeCommands += 'teamocil settings';
+    var tmuxBaseCommand = 'tmux new-session -d \"%s\"';
+    var tmuxFirstNodeCommands = nodeUtil.format(tmuxBaseCommand, firstNodeOnlyCommand + normalNodeCommands);
+    var tmuxOtherNodeCommands = nodeUtil.format(tmuxBaseCommand, otherNodeOnlyCommand + normalNodeCommands);
 
-    var seedIps = dropletIps.splice(0, seedNodeSize);
-    var seedRequests = generateSSHRequests(seedIps, sshCommand);
-    var normalRequests = generateSSHRequests(dropletIps, sshCommand);
+    var firstNodeGrepCommand = 'grep \"Started a new network as a seed node\" Node.log';
 
-    var seedNodeProgress = new ProgressBar('Starting seed nodes [:bar] :current/:total :percent', {
-        complete: '=',
-        incomplete: ' ',
-        width: 20,
-        total: seedNodeSize
-      });
-    seedNodeProgress.tick(0);
-
-    var TickProgress = function() {
-      this.run = function(callback) {
-        seedNodeProgress.tick(1);
-        return callback(null);
-      };
-      return this.run;
-    };
+    var firstNodeIp = dropletIps.splice(0, 1)[0];
+    var firstNodeRequest = generateSSHRequests([ firstNodeIp ], tmuxFirstNodeCommands)[0];
+    var normalRequests = generateSSHRequests(dropletIps, tmuxOtherNodeCommands);
 
     var WaitForNodeToStart = function(node, grepCommand) {
       this.run = function(callback) {
@@ -578,47 +566,25 @@ exports = module.exports = function(args) {
         throw 'First seed node failed to start ' + err;
       }
 
-      seedNodeProgress.tick(1);
-      var StartSeed = function(ip, seedRequest) {
-        this.run = function(callback) {
-          seedRequest(function(err) {
-            if (err) {
-              return callback(err);
-            }
-            new WaitForNodeToStart(ip, routingTableGrepCommand)(callback);
-          });
-        };
-        return this.run;
-      };
-      var seedNodeStartRequests = [];
-      seedRequests.slice(1, seedRequests.length).forEach(function(seedRequest, index) {
-        seedNodeStartRequests.push(new StartSeed(seedIps[index], seedRequest));
-        seedNodeStartRequests.push(new TickProgress());
-      });
-      async.series(seedNodeStartRequests, function(err) {
-        if (err) {
-          console.log('Failed starting seed nodes.');
-          return callback(err);
+      console.log('Started first Node.');
+      console.log('Starting remaining nodes in parallel');
+      async.parallel(normalRequests, function(err) {
+        if (!err) {
+          console.log('All droplet nodes started.\n');
+          return callback(null);
         }
-
-        console.log('Starting remaining nodes in parallel');
-        async.parallel(normalRequests, function(err) {
-          if (!err) {
-            console.log('All droplet nodes started.\n');
-            return callback(null);
-          }
-          console.log('Failed starting normal nodes.');
-          callback(err);
-        });
+        console.log('Failed starting remaining nodes.');
+        callback(err);
       });
     };
 
-    seedRequests[0](function(err) {
+    console.log('Starting first Node.');
+    firstNodeRequest(function(err) {
       if (err) {
         console.log('First seed node failed to start');
         throw err;
       }
-      new WaitForNodeToStart(seedIps[0], nodeListeningGrepCommand)(onFirstSeedStarted);
+      new WaitForNodeToStart(firstNodeIp, firstNodeGrepCommand)(onFirstSeedStarted);
     });
   };
 
