@@ -40,3 +40,5 @@ if [[ $TRAVIS_RUST_VERSION = stable ]] && [[ $TRAVIS_OS_NAME = linux ]] && [[ ${
   export ElfUtilsInstallPath=$ElfUtilsInstallPath
 
 fi
+
+trap '' ERR

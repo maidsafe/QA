@@ -58,7 +58,11 @@ exports = module.exports = function() {
       return this.run;
     };
     var sshOptions = {
+      /*jshint camelcase: false */
+      // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
       host: droplet.networks.v4[0].ip_address,
+      // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
+      /*jshint camelcase: true */
       username: config.dropletUser,
       password: auth.getDropletUserPassword(),
       readyTimeout: 99999
@@ -85,12 +89,14 @@ exports = module.exports = function() {
         return invalidRange();
       }
       for (var i in range) {
-        if (isNaN(range[i])) {
-          return invalidRange();
-        }
-        range[i] = parseInt(range[i]);
-        if (!(range[i] > 0 && range[i] <= droplets.length)) {
-          return invalidRange();
+        if (range[i]) {
+          if (isNaN(range[i])) {
+            return invalidRange();
+          }
+          range[i] = parseInt(range[i]);
+          if (!(range[i] > 0 && range[i] <= droplets.length)) {
+            return invalidRange();
+          }
         }
       }
       nonChurnNodeBounds.lowerBound = range[0];
@@ -115,7 +121,7 @@ exports = module.exports = function() {
       }
       if (droplets.length === 0) {
         var msg = 'No droplets found for user %s for the selected library %s. Setup a network and try again';
-        return callback(nodeUtil.format(msg, auth.getUserName(), selectedLibraryKey))
+        return callback(nodeUtil.format(msg, auth.getUserName(), selectedLibraryKey));
       }
       callback();
     });
@@ -123,7 +129,10 @@ exports = module.exports = function() {
 
   var startChurning = function() {
     var runningNodesCount = 0;
-    var dropletsToChurn = droplets.slice(0, nonChurnNodeBounds.lowerBound - 1).concat(droplets.slice(nonChurnNodeBounds.upperBound));
+    var nodesStarted = 0;
+    var nodesStopped = 0;
+    var dropletsToChurn =
+        droplets.slice(0, nonChurnNodeBounds.lowerBound - 1).concat(droplets.slice(nonChurnNodeBounds.upperBound));
 
     var getRandomIndex = function() {
       return Math.floor(Math.random() * dropletsToChurn.length);
@@ -138,11 +147,18 @@ exports = module.exports = function() {
       var nodeIndex = getNodeIndexFromName(droplet.name);
       executeCommandOnDroplet(droplet, cmd, function(err) {
         if (err) {
+          /*jshint camelcase: false */
+          // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
           return console.log('Failed to start: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
+          // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
+          /*jshint camelcase: true */
         }
         droplet.isRunning = true;
         runningNodesCount++;
+        nodesStarted++;
         console.log('Started: Node %s \t Current Network Size: %s', nodeIndex, runningNodesCount);
+        console.log('Completed Churn Event: %s \t Nodes Started %s \t Nodes Stopped %s',
+            nodesStarted + nodesStopped, nodesStarted, nodesStopped);
       });
     };
 
@@ -151,17 +167,24 @@ exports = module.exports = function() {
       var nodeIndex = getNodeIndexFromName(droplet.name);
       executeCommandOnDroplet(droplet, cmd, function(err) {
         if (err) {
+          /*jshint camelcase: false */
+          // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
           return console.log('Failed to stop: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
+          // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
+          /*jshint camelcase: true */
         }
         droplet.isRunning = false;
         runningNodesCount--;
+        nodesStopped++;
         console.log('Stopped: Node %s \t Current Network Size: %s', nodeIndex, runningNodesCount);
+        console.log('Completed Churn Event: %s \t Nodes Started %s \t Nodes Stopped %s',
+            nodesStarted + nodesStopped, nodesStarted, nodesStopped);
       });
     };
 
     var churn = function() {
       var droplet = dropletsToChurn[getRandomIndex()];
-      if(droplet.isRunning) {
+      if (droplet.isRunning) {
         new StopNode(droplet);
       } else {
         new StartNode(droplet);
@@ -171,21 +194,27 @@ exports = module.exports = function() {
     console.log('Calculating current network size\n');
     var tasks = [];
     for (var i in droplets) {
-      tasks.push(new GetDropletStatus(droplets[i]));
+      if (droplets[i]) {
+        tasks.push(new GetDropletStatus(droplets[i]));
+      }
     }
 
     async.parallel(tasks, function(err, res) {
       if (err) {
         throw err;
       }
+      /*jshint forin: false */
       for (var i in res) {
-        dropletsToChurn.some(function (el) {
+        /*jshint forin: true */
+        // TODO remove the jshint lookfunc error instead of suppressing it
+        /*jshint loopfunc: true */
+        dropletsToChurn.some(function(el) {
+          /*jshint loopfunc: false */
           if (el.name.indexOf(droplets[i].name) === 0) {
             el.isRunning = res[i];
             return true;
           }
         });
-
         if (res[i]) {
           runningNodesCount++;
         }
@@ -198,7 +227,9 @@ exports = module.exports = function() {
 
   var prepare = function(selectedOption) {
     var i = 0;
+    /*jshint forin: false */
     for (var key in config.libraries) {
+      /*jshint forin: true */
       i++;
       if (i === selectedOption) {
         selectedLibraryKey = key;

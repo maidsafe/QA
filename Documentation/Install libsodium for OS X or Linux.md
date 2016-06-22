@@ -5,7 +5,7 @@
 Download, unpack the most recent tarball of [libsodium](https://download.libsodium.org/libsodium/releases/), build the static variant and install to "/usr/local/":
 
 ```bash
-Version=1.0.8
+Version=1.0.9
 mkdir temp
 cd temp
 wget https://github.com/jedisct1/libsodium/releases/download/$Version/libsodium-$Version.tar.gz

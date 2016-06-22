@@ -1,7 +1,12 @@
 {
   "hard_coded_contacts": [],
   "tcp_acceptor_port": null,
-  "utp_acceptor_port": null,
-  "udp_mapper_servers": [],
-  "tcp_mapper_servers": []
+  "service_discovery_port": null,
+  "bootstrap_cache_name": null,
+  "tcp_mapper_servers": [
+    "162.243.228.81:39590",
+    "128.199.185.249:44473",
+    "178.62.82.189:46782"
+  ],
+  "network_name": "test_network"
 }
