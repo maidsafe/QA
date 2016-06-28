@@ -15,4 +15,4 @@ if [[ ! $TRAVIS_RUST_VERSION = stable ]] || [[ ! $TRAVIS_OS_NAME = linux ]] || [
 fi
 
 curl -sSL https://github.com/maidsafe/QA/raw/master/Bash%20Scripts/Travis/deploy_docs.sh | bash
-curl -sSL https://github.com/maidsafe/QA/raw/master/Bash%20Scripts/Travis/run_coverage.sh | bash
+# curl -sSL https://github.com/maidsafe/QA/raw/master/Bash%20Scripts/Travis/run_coverage.sh | bash
