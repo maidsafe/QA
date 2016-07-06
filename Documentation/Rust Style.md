@@ -16,6 +16,16 @@ or in other patterns where using them makes the code _much simpler_ and it is _o
 In these cases, as well as in tests, consider using the macros from the [`unwrap` crate](https://crates.io/crates/unwrap).
 
 
+## Threads
+
+Generally avoid detached threads. Give child threads meaningful names.
+
+This can easily be achieved by preferring to create child threads using [`maidsafe_utilities::thread::named()`](http://docs.maidsafe.net/maidsafe_utilities/master/maidsafe_utilities/thread/fn.named.html).
+
+* it returns a [`Joiner`](http://docs.maidsafe.net/maidsafe_utilities/master/maidsafe_utilities/thread/struct.Joiner.html) which helps to avoid detached threads
+* it requires that the child thread is given a name
+
+
 ## Rustfmt
 
 Apply `rustfmt` to new code before committing, using the default configuration or, if present, the repository's `rustfmt.toml` file.
