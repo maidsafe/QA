@@ -49,9 +49,10 @@ fi
 rm -rf master
 cp -rf /tmp/doc master
 
+# Temporary patch to remove any named version docs
+rm -rf 0*
+
 if [[ -n ${Version+x} ]]; then
-  rm -rf $Version
-  cp -rf /tmp/doc $Version
   rm -rf latest
   cp -rf /tmp/doc latest
 fi
