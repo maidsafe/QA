@@ -50,7 +50,7 @@ rm -rf master
 cp -rf /tmp/doc master
 
 # Temporary patch to remove any named version docs
-rm -rf 0*
+rm -rf 0* > /dev/null 2>&1
 
 if [[ -n ${Version+x} ]]; then
   rm -rf latest
