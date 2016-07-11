@@ -58,7 +58,7 @@ if [[ -n ${Version+x} ]]; then
 fi
 
 git add --all . > /dev/null 2>&1
-if git commit -m"Updated documentation."; then
+if git commit -m"Updated documentation." > /dev/null 2>&1; then
   # Pipe output to null if the following command fails to thereby not print expanded variables
   git push https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages > /dev/null 2>&1
 fi
