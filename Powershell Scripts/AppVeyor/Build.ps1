@@ -1,3 +1,5 @@
+# rustup default $env:RUST_VERSION
+
 # Use features if they've been set
 if ($env:Features) {
     $with_features = "--features",$env:Features
