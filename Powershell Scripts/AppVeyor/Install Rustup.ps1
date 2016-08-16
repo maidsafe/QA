@@ -22,8 +22,9 @@ bash -lc "$installer -y --default-host $arch-pc-windows-gnu"
 # Add rustup to path
 $env:Path = $env:USERPROFILE + "\.cargo\bin;" + $env:Path
 
-# Install nightly
-rustup update nightly
+# Set the requested channel and install nightly
+# rustup update nightly
+rustup default $env:RUST_VERSION
 
 "Rust version:"
 ""
