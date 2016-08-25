@@ -1,7 +1,8 @@
 exports = module.exports = function() {
   var config = require('./config.json');
-  var util = require('./common/utils');
+  var utils = require('./common/utils');
   var auth = require('./common/auth');
+  var nodeUtil = require('util');
   var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken(), config.testMode);
   var async = require('async');
   var libraryKey;
@@ -14,13 +15,28 @@ exports = module.exports = function() {
         return;
       }
       var pattern = auth.getUserName() + '-' + libraryKey;
+      console.log('Matching Droplets:');
       for (var i in list) {
         if (list[i].name.indexOf(pattern) === 0) {
           droplets.push(list[i]);
+          console.log(list[i].name);
         }
       }
-      console.log('Deleting ' + droplets.length + ' droplets...');
-      callback(null);
+
+      if (droplets.length === 0) {
+        callback('No droplets found');
+        return;
+      }
+
+      var msg = '\n%d Droplets will be deleted. Are you sure? (Type Y for yes)';
+      utils.postQuestion(nodeUtil.format(msg, droplets.length),
+        function(deleteConfirmation) {
+          if (deleteConfirmation && deleteConfirmation.toLowerCase() === 'y') {
+            callback(null);
+          } else {
+            callback('Drop Network sequence aborted.');
+          }
+        });
     });
   };
 
@@ -87,7 +103,7 @@ exports = module.exports = function() {
         i++;
       }
     }
-    util.postQuestion('Select the library to drop the network for:' + libOptions, onLibrarySelected);
+    utils.postQuestion('Select the library to drop the network for:' + libOptions, onLibrarySelected);
   };
 
   showMainMenu();

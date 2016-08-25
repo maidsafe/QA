@@ -7,7 +7,7 @@
   "minNetworkSize": 1,
   "maxNetworkSize": 200,
   "minSeedNodeSize": 1,
-  "maxSeedNodeSize": 6,
+  "maxSeedNodeSize": 25,
   "dropletUser": "qa",
   "remotePathToTransferFiles": "/home/qa/",
   "dropletFileHost": "139.59.180.6",

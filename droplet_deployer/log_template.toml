@@ -1,31 +1,29 @@
-[appender.async_console]
+[appenders.async_console]
 kind = "async_console"
-pattern = "%l %d{%H:%M:%S.%f} [%M #FS#%f#FE#:%L] %m"
+pattern = "{l} {d(%H:%M:%S.%f)} [{M} #FS#{f}#FE#:{L}] {m}\n"
 
-[[appender.async_console.filter]]
+[[appenders.async_console.filter]]
 kind = "threshold"
 level = "info"
 
-[appender.async_file]
+[appenders.async_file]
 kind = "async_file"
-path = "Node.log"
-pattern = "%l %d{%H:%M:%S.%f} [%M #FS#%f#FE#:%L] %m"
+output_file_name = "Node.log"
+pattern = "{l} {d(%H:%M:%S.%f)} [{M} #FS#{f}#FE#:{L}] {m}\n"
 append = false
 
 [root]
 level = "error"
 appenders = ["async_console", "async_file"]
 
-[[logger]]
-name = "crust"
+[loggers."crust"]
 level = "debug"
 appenders = ["async_file"]
 additive = false
 
-[[logger]]
-name = "routing"
+[loggers."routing"]
 level = "debug"
 
-[[logger]]
-name = "safe_vault"
+[loggers."safe_vault"]
 level = "debug"
+

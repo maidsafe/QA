@@ -86,10 +86,7 @@ exports = module.exports = function(args) {
     var ip;
     for (var i = 0; i < seedNodeSize; i++) {
       ip = createdDroplets[i].networks.v4[0].ip_address;
-      endPoints.push({
-        tcp_acceptors: [ ip + ':' + stdListeningPort ],
-        tcp_mapper_servers: []
-      });
+      endPoints.push(ip + ':' + stdListeningPort);
     }
     return endPoints;
   };
@@ -122,7 +119,7 @@ exports = module.exports = function(args) {
           var dropletIps = utils.getDropletIps(createdDroplets);
           var sshCommand = 'tmux kill-session;';
           sshCommand += 'rm *.log;';
-          sshCommand += 'rm bootstrap.cache;';
+          sshCommand += 'rm log.toml;';
           sshCommand += nodeUtil.format('rm %s* || true', binaryName);
           var requests = generateSSHRequests(dropletIps, sshCommand);
           async.parallel(requests, function(err) {
@@ -388,7 +385,7 @@ exports = module.exports = function(args) {
         }
       });
     };
-    setTimeout(getDropletInfo, 20 * 1000);
+    setTimeout(getDropletInfo, 60 * 1000);
   };
 
   var clearOutputFolder = function(callback) {
@@ -417,6 +414,11 @@ exports = module.exports = function(args) {
     configFile.hard_coded_contacts = generateEndPoints(stdListeningPort);
     var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig.example : selectedLibraryRepoName;
     fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.crust.config', JSON.stringify(configFile, null, 2));
+    callback(null);
+  };
+
+  var generateVaultConfigFile = function(callback) {
+    fse.copySync('./vault_config_template.json', config.outFolder + '/scp/safe_vault.vault.config');
     callback(null);
   };
 
@@ -653,7 +655,11 @@ exports = module.exports = function(args) {
         generateStdConfigFile
     );
 
-    if (binaryName === 'reporter') {
+    if (binaryName === 'safe_vault') {
+      waterfallTasks.push(
+        generateVaultConfigFile
+      );
+    } else if (binaryName === 'reporter') {
       waterfallTasks.push(
           generateReporterConfigFiles
       );
