@@ -34,7 +34,7 @@ var AuthManager = function() {
         callback(err);
         return;
       }
-      credentials = require('../' + config.workspace + '/' + CLONED_REPO_NAME + '/credentials');
+      credentials = require('../' + config.workspace + '/' + CLONED_REPO_NAME + '/droplets/credentials');
       callback(null);
     });
   };

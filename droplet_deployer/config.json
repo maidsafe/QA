@@ -1,5 +1,5 @@
 {
-  "auth_repo": "git@github.com:maidsafe/droplet_deployer_creds.git",
+  "auth_repo": "git@github.com:maidsafe/release_config.git",
   "platforms": ["linux"],
   "workspace": "temp_job",
   "outFolder": "output",
