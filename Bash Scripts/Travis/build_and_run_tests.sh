@@ -13,10 +13,10 @@ RUST_BACKTRACE=1
 export RUST_BACKTRACE
 
 if [[ $TRAVIS_RUST_VERSION = nightly ]]; then
-  # Don't make a Clippy failure result in overall failure for now
-  cargo test --no-run --features clippy || true
+  # To ignore this failure, set `allow_failures` in build matrix for nightly builds
+  cargo test --no-run --features clippy
   for Feature in $Features; do
-    cargo test --no-run --features "clippy $Feature" || true
+    cargo test --no-run --features "clippy $Feature"
   done
 else
   # Run the tests for each feature
