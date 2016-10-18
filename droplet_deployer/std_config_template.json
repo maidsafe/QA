@@ -1,5 +1,6 @@
 {
   "hard_coded_contacts": [],
+  "bootstrap_whitelisted_ips": [],
   "tcp_acceptor_port": null,
   "service_discovery_port": null,
   "bootstrap_cache_name": null,

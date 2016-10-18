@@ -34,6 +34,7 @@ exports = module.exports = function(args) {
   var progressBar;
   var isUsingExistingDroplets = true;
   var snapshotRegions;
+  var isWhitelistedNetwork;
 
   var BINARY_EXT = {
     'windows_nt': '.exe',
@@ -80,13 +81,20 @@ exports = module.exports = function(args) {
     return requests;
   };
 
-  // Helper fn to populate hard_coded_contacts for std config file
-  var generateEndPoints = function(stdListeningPort) {
+  // Helper fn to populate hard_coded_contacts and bootstrap_whitelisted_ips for std config file
+  var generateEndPoints = function(isSeedNodes, stdListeningPort) {
     var endPoints = [];
     var ip;
-    for (var i = 0; i < seedNodeSize; i++) {
+    for (var i = 0; i < createdDroplets.length; i++) {
       ip = createdDroplets[i].networks.v4[0].ip_address;
-      endPoints.push(ip + ':' + stdListeningPort);
+      if (isSeedNodes) {
+        endPoints.push(ip + ':' + stdListeningPort);
+        if (seedNodeSize === endPoints.length) {
+          break;
+        }
+      } else {
+        endPoints.push(ip);
+      }
     }
     return endPoints;
   };
@@ -259,6 +267,23 @@ exports = module.exports = function(args) {
     });
   };
 
+  var getIsWhitelistedNetwork = function(callback) {
+    if (binaryName === 'reporter') {
+      return callback(null);
+    }
+
+    utils.postQuestion('Is network limited to white-list nodes [Y/n]', function(isWhiteListOnly) {
+      isWhiteListOnly = isWhiteListOnly.toLowerCase();
+      if (isWhiteListOnly !== 'y' && isWhiteListOnly !== 'n' ) {
+        console.log('Invalid input');
+        getIsWhitelistedNetwork(callback);
+      } else {
+        isWhitelistedNetwork = isWhiteListOnly === 'y';
+        callback(null);
+      }
+    });
+  };
+
   var getListeningPort = function(callback) {
     if (!args.hasOwnProperty(ADVANCED_ARG)) {
       callback(null);
@@ -411,7 +436,8 @@ exports = module.exports = function(args) {
     configFile = require('./std_config_template.json');
     var stdListeningPort = listeningPort | config.listeningPort;
     configFile.tcp_acceptor_port = stdListeningPort;
-    configFile.hard_coded_contacts = generateEndPoints(stdListeningPort);
+    configFile.hard_coded_contacts = generateEndPoints(true, stdListeningPort);
+    configFile.bootstrap_whitelisted_ips = generateEndPoints();
     var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig.example : selectedLibraryRepoName;
     fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.crust.config', JSON.stringify(configFile, null, 2));
     callback(null);
@@ -642,10 +668,8 @@ exports = module.exports = function(args) {
         build,
         stripBinary,
         getNetworkSize,
-        getSeedNodeSize
-    );
-
-    waterfallTasks.push(
+        getSeedNodeSize,
+        getIsWhitelistedNetwork,
         getListeningPort,
         getNetworkType,
         createDroplets,
