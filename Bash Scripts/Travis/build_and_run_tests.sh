@@ -28,7 +28,7 @@ else
     # There are no features, so run the default test suite
     cargo build --release --verbose
     cargo test --release
-  else
+  elif [[ $TRAVIS_OS_NAME = linux ]]; then
     # We currently don't run the default tests if there are any features
     cargo test --release --verbose --no-run
   fi
