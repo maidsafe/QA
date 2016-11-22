@@ -20,3 +20,6 @@ if [[ $TRAVIS_RUST_VERSION = nightly ]]; then
     cargo rustc --features "clippy $Feature" -- --test -Zno-trans
   done
 fi
+
+# Hide expanded commands while running
+set +x
