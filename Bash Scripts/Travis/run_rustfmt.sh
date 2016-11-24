@@ -16,7 +16,7 @@ fi
 
 res=0
 for i in `find . -name '*.rs'`; do
-  $HOME/.cargo/bin/rustfmt --skip-children --write-mode=diff $i
+  $HOME/.cargo/bin/rustfmt --skip-children --write-mode=diff $i > /dev/null
   if [ $? -ne 0 ]; then
     res=1
   fi
