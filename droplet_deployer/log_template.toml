@@ -22,8 +22,11 @@ appenders = ["async_file"]
 additive = false
 
 [loggers."routing"]
-level = "debug"
+level = "trace"
+
+[loggers."routing_stats"]
+level = "trace"
 
 [loggers."safe_vault"]
-level = "debug"
+level = "trace"
 
