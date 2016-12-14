@@ -1,6 +1,6 @@
 # Contributing Rust code to MaidSafe
 
-We don't maintain a separate style guide but in general try to follow [common good practice](https://github.com/rust-lang/rust/tree/master/src/doc/style), write readable and idiomatic code and aim for full test coverage. In addition, this document lists a few decisions we've reached in discussions about specific topics.
+We don't maintain a separate style guide but in general try to follow [common good practice](https://aturon.github.io/), write readable and idiomatic code and aim for full test coverage. In addition, this document lists a few decisions we've reached in discussions about specific topics.
 
 
 ## Unwrap
