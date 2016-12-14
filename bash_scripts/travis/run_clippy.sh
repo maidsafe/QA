@@ -12,6 +12,10 @@ if [[ $TRAVIS_RUST_VERSION = nightly ]]; then
   if [[ ! $TRAVIS_OS_NAME = linux ]]; then
     exit 0
   fi
+  # Use the Rust and Clippy versions as documented in:
+  # https://github.com/maidsafe/QA/blob/master/Documentation/Rust%20Style.md
+  rustup default nightly-2016-11-17
+  rustc --version
   # To ignore this failure, set `allow_failures` in build matrix for nightly builds
   cargo rustc --features clippy -- --test -Zno-trans
   for Feature in $Features; do

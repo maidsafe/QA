@@ -1,6 +1,6 @@
 # Contributing Rust code to MaidSafe
 
-We don't maintain a separate style guide but in general try to follow [common good practice](https://github.com/rust-lang/rust/tree/master/src/doc/style), write readable and idiomatic code and aim for full test coverage. In addition, this document lists a few decisions we've reached in discussions about specific topics.
+We don't maintain a separate style guide but in general try to follow [common good practice](https://aturon.github.io/), write readable and idiomatic code and aim for full test coverage. In addition, this document lists a few decisions we've reached in discussions about specific topics.
 
 
 ## Unwrap
@@ -34,6 +34,8 @@ Apply `rustfmt` to new code before committing, using the default configuration o
 ## Clippy
 
 If a crate has that feature, make sure your code does not produce any new errors when compiling with `--features=clippy`. If you don't agree with a [Clippy lint](https://github.com/Manishearth/rust-clippy#lints), discuss it with the team before explicitly adding an `#[allow(lint)]` attribute.
+
+We currently use Rust nightly-2016-11-17 and Clippy 0.0.99. We update these versions every time a new stable Rust version is released.
 
 
 ## Other crates
