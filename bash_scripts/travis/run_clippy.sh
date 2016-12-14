@@ -14,7 +14,7 @@ if [[ $TRAVIS_RUST_VERSION = nightly ]]; then
   fi
   # Use the Rust and Clippy versions as documented in:
   # https://github.com/maidsafe/QA/blob/master/Documentation/Rust%20Style.md
-  rustup default nightly-2016-11-17
+  sh ~/rust-installer/rustup.sh --prefix=~/rust --spec=nightly-2016-11-17 -y --disable-sudo
   rustc --version
   # To ignore this failure, set `allow_failures` in build matrix for nightly builds
   cargo rustc --features clippy -- --test -Zno-trans
