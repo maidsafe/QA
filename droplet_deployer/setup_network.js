@@ -437,7 +437,11 @@ exports = module.exports = function(args) {
     var stdListeningPort = listeningPort | config.listeningPort;
     configFile.tcp_acceptor_port = stdListeningPort;
     configFile.hard_coded_contacts = generateEndPoints(true, stdListeningPort);
-    configFile.bootstrap_whitelisted_ips = generateEndPoints();
+    if (isWhitelistedNetwork) {
+      configFile.bootstrap_whitelisted_ips = generateEndPoints();
+    } else {
+      configFile.bootstrap_whitelisted_ips = [];
+    }
     var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig.example : selectedLibraryRepoName;
     fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.crust.config', JSON.stringify(configFile, null, 2));
     callback(null);
