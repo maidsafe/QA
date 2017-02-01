@@ -1,8 +1,9 @@
 ## Update Snapshot Used by Droplet Deployer
 
 1. Create a new droplet from the existing "Droplet Deployer" [snapshot][0].
-1. Make whatever changes are required (user is `qa`, password is held in [private Assets repo][1]).
-1. Shutdown the droplet and take a new snapshot called `Droplet Deployer`.
+1. Make whatever changes are required (user is `qa`, password is held in [release_config repo][1]).
+1. On the droplet, run `sudo rm -rf /root/.ssh/ && sudo shutdown -h now`
+1. Once the droplet has shut down, take a new snapshot called `Droplet Deployer`.
 1. Replicate [the snapshot][0] to all regions (click the "More" option, then "Add to Region").
 1. Rename the [old snapshot][0] to `Old Droplet Deployer` (check "Created" values).
 1. [Generate a new Personal Access Token][2].
@@ -17,7 +18,7 @@
 
 
 [0]: https://cloud.digitalocean.com/images/snapshots
-[1]: https://github.com/maidsafe/Assets/blob/master/QA/Droplets.md
+[1]: https://github.com/maidsafe/release_config/blob/master/droplets/credentials.json#L3
 [2]: https://cloud.digitalocean.com/settings/api/tokens/new
 [3]: https://github.com/maidsafe/QA/blob/master/droplet_deployer/config.json#L37
 [4]: https://github.com/maidsafe/QA/tree/master/droplet_deployer
