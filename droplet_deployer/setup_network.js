@@ -35,6 +35,7 @@ exports = module.exports = function(args) {
   var isUsingExistingDroplets = true;
   var snapshotRegions;
   var isWhitelistedNetwork;
+  var networkName;
 
   var BINARY_EXT = {
     'windows_nt': '.exe',
@@ -133,6 +134,7 @@ exports = module.exports = function(args) {
           async.parallel(requests, function(err) {
             if (!err) {
               console.log('Network state cleared successfully.\n');
+              networkSize = existingDroplets.length;
               return callback(null);
             }
 
@@ -206,7 +208,8 @@ exports = module.exports = function(args) {
 
   var build = function(callback) {
     var targetPath = path.resolve(config.workspace + '/target_' + selectedLibraryRepoName);
-    var buildCommand = 'CARGO_TARGET_DIR=' + targetPath + ' cargo build';
+    var rustFlags = config.fastBuild ? 'RUSTFLAGS="-C opt-level=2 -C codegen-units=8"' : '';
+    var buildCommand = nodeUtil.format('%s CARGO_TARGET_DIR=%s cargo build', rustFlags, targetPath);
     if (libraryConfig.hasOwnProperty('example')) {
       buildCommand += ' --example ' + libraryConfig.example;
     }
@@ -255,9 +258,9 @@ exports = module.exports = function(args) {
     }
 
     utils.postQuestion('Please enter the size of the seed nodes between ' +
-    config.minSeedNodeSize + '-' + config.maxSeedNodeSize, function(size) {
+    config.minSeedNodeSize + '-' + networkSize, function(size) {
       size = parseInt(size);
-      if (isNaN(size) || size < config.minSeedNodeSize || size > config.maxSeedNodeSize) {
+      if (isNaN(size) || size < config.minSeedNodeSize || size > networkSize) {
         console.log('Invalid input');
         getSeedNodeSize(callback);
       } else {
@@ -299,6 +302,15 @@ exports = module.exports = function(args) {
         }
       }
       listeningPort = port ? port : config.listeningPort;
+      callback(null);
+    }, true);
+  };
+
+  var getNetworkName = function(callback) {
+    var defaultNetworkName = 'test_network';
+    var message = '\nPlease provide the network name to use. (default: ' + defaultNetworkName + ')';
+    utils.postQuestion(message, function(name) {
+      networkName = name ? name : defaultNetworkName;
       callback(null);
     }, true);
   };
@@ -442,6 +454,7 @@ exports = module.exports = function(args) {
     } else {
       configFile.bootstrap_whitelisted_ips = [];
     }
+    configFile.network_name = networkName;
     var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig.example : selectedLibraryRepoName;
     fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.crust.config', JSON.stringify(configFile, null, 2));
     callback(null);
@@ -675,6 +688,7 @@ exports = module.exports = function(args) {
         getSeedNodeSize,
         getIsWhitelistedNetwork,
         getListeningPort,
+        getNetworkName,
         getNetworkType,
         createDroplets,
         getDroplets,

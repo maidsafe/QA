@@ -4,5 +4,5 @@
   "tcp_acceptor_port": null,
   "service_discovery_port": null,
   "bootstrap_cache_name": null,
-  "network_name": "test_network"
+  "network_name": null
 }

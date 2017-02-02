@@ -2,7 +2,7 @@
 kind = "async_console"
 pattern = "{l} {d(%H:%M:%S.%f)} [{M} #FS#{f}#FE#:{L}] {m}\n"
 
-[[appenders.async_console.filter]]
+[[appenders.async_console.filters]]
 kind = "threshold"
 level = "info"
 
