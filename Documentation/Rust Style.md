@@ -40,7 +40,7 @@ In `impl`s, always put public functions before private ones.
 
 If a crate has that feature, make sure your code does not produce any new errors when compiling with `--features=clippy`. If you don't agree with a [Clippy lint](https://github.com/Manishearth/rust-clippy#lints), discuss it with the team before explicitly adding an `#[allow(lint)]` attribute.
 
-We currently use Rust stable 1.15.0, Rust nightly-2017-02-02 and Clippy 0.0.112. We update these versions every time a new stable Rust version is released.
+We currently use Rust stable 1.14.0, Rust nightly-2016-12-19 and Clippy 0.0.104. We update these versions every time a new stable Rust version is released.
 
 **Note for Windows users:** Due to a recent bug in rustup, you may get a missing dll error when trying to run `cargo clippy`.  In this case, you can work around the issue by modifying your `PATH` environment variable:
 
