@@ -1,5 +1,5 @@
 {
   "wallet_address": null,
-  "max_capacity": 21474836480,
+  "max_capacity": 5368709120,
   "chunk_store_root": null
 }

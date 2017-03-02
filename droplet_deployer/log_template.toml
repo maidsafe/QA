@@ -1,6 +1,6 @@
 [appenders.async_console]
 kind = "async_console"
-pattern = "{l} {d(%H:%M:%S.%f)} [{M} #FS#{f}#FE#:{L}] {m}\n"
+pattern = "{({l}):1.1} {d(%y-%m-%d %H:%M:%S%.6f)} {m}\n"
 
 [[appenders.async_console.filters]]
 kind = "threshold"
@@ -9,8 +9,9 @@ level = "info"
 [appenders.async_file]
 kind = "async_file"
 output_file_name = "Node.log"
-pattern = "{l} {d(%H:%M:%S.%f)} [{M} #FS#{f}#FE#:{L}] {m}\n"
+pattern = "{({l}):1.1} {d(%y-%m-%d %H:%M:%S%.6f)} [{M} #FS#{f}#FE#:{L}] {m}\n"
 append = false
+file_timestamp = false
 
 [root]
 level = "error"
@@ -29,4 +30,3 @@ level = "trace"
 
 [loggers."safe_vault"]
 level = "trace"
-

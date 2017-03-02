@@ -13,28 +13,23 @@ exports = module.exports = function() {
     lowerBound: 0,
     upperBound: 0
   };
+  var stageOptions = {
+    NORMAL : "Regular Churn",
+    MERGES : "Get to Network Size < 50% Nodes",
+    SPLITS : "Get to Network Size == 100% Nodes"
+  };
+  var stages = [
+    stageOptions.SPLITS,
+    stageOptions.NORMAL,
+    stageOptions.MERGES,
+    stageOptions.NORMAL
+  ];
   var churnFrequency = 0;
-
-  var getChurnFrequency = function(callback) {
-    var onUserInput = function(frequency) {
-      if (isNaN(frequency)) {
-        console.log('Enter a valid number');
-        return getChurnFrequency();
-      }
-      churnFrequency = frequency;
-      callback();
-    };
-    utils.postQuestion('Enter the churn interval in seconds', onUserInput);
-  };
-
-  var GetDropletStatus = function(droplet) {
-    this.run = function(callback) {
-      executeCommandOnDroplet(droplet, 'ls Node.log', function(err) {
-        callback(null, err ? false : true);
-      });
-    };
-    return this.run;
-  };
+  var churnIntensity = 0;
+  var grepIsNodeStarted = '(pgrep safe_vault || pgrep key_value_store)';
+  var grepIsNodeConnected = grepIsNodeStarted + ' && grep \"Routing Table size:\" ~/Node.log';
+  var nodesStartedCount = 0;
+  var nodesStoppedCount = 0;
 
   var executeCommandOnDroplet = function(droplet, cmd, callback) {
     var Handler = function(sshOptions) {
@@ -58,11 +53,7 @@ exports = module.exports = function() {
       return this.run;
     };
     var sshOptions = {
-      /*jshint camelcase: false */
-      // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
       host: droplet.networks.v4[0].ip_address,
-      // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
-      /*jshint camelcase: true */
       username: config.dropletUser,
       password: auth.getDropletUserPassword(),
       readyTimeout: 99999
@@ -71,7 +62,28 @@ exports = module.exports = function() {
       if (!err) {
         return callback(null);
       }
-      callback(err);
+      return callback(err);
+    });
+  };
+
+  var getDroplets = function(callback) {
+    digitalOcean.getDropletList(function(err, list) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      var userName = auth.getUserName();
+      var pattern = userName + '-' + selectedLibraryKey;
+      for (var i in list) {
+        if (list[i].name.indexOf(pattern) === 0) {
+          droplets.push(list[i]);
+        }
+      }
+      if (droplets.length === 0) {
+        var msg = 'No droplets found for user %s for the selected library %s. Setup a network and try again';
+        return callback(nodeUtil.format(msg, auth.getUserName(), selectedLibraryKey));
+      }
+      callback();
     });
   };
 
@@ -106,123 +118,244 @@ exports = module.exports = function() {
     utils.postQuestion('Enter the non-churn nodes range between 1-' + droplets.length, onUserInput);
   };
 
-  var getDroplets = function(callback) {
-    digitalOcean.getDropletList(function(err, list) {
-      if (err) {
-        callback(err);
-        return;
+  var getChurnFrequency = function(callback) {
+    var onUserInput = function(frequency) {
+      if (isNaN(frequency)) {
+        console.log('Enter a valid number');
+        return getChurnFrequency();
       }
-      var userName = auth.getUserName();
-      var pattern = userName + '-' + selectedLibraryKey;
-      for (var i in list) {
-        if (list[i].name.indexOf(pattern) === 0) {
-          droplets.push(list[i]);
+      churnFrequency = frequency * 1000;
+      callback();
+    };
+    utils.postQuestion('Enter the churn interval in seconds', onUserInput);
+  };
+
+  var getChurnIntensity = function(callback) {
+    var onUserInput = function(intensity) {
+      if (isNaN(intensity)) {
+        console.log('Enter a valid number');
+        return getChurnIntensity();
+      }
+      churnIntensity = intensity;
+      callback();
+    };
+    utils.postQuestion('Enter the churn intensity', onUserInput);
+  };
+
+  var getRandomIndexes = function(maxIndex) {
+    var indexes = [];
+    while (indexes.length < churnIntensity) {
+      var index = Math.floor(Math.random() * maxIndex);
+      if(indexes.indexOf(index) > -1) {
+        continue;
+      }
+      indexes[indexes.length] = index;
+    }
+    return indexes;
+  };
+
+  var IsNodeStateValid = function(droplet, isConnected) {
+    this.run = function(callback) {
+      executeCommandOnDroplet(droplet, isConnected ? grepIsNodeConnected : grepIsNodeStarted, function(err) {
+        return callback(null, !err);
+      });
+    };
+    return this.run;
+  };
+
+  var calculateNetworkState = function (droplets, isConnected, callback) {
+    var tasks = [];
+    for (var i in droplets) {
+      if (droplets[i]) {
+        tasks.push(new IsNodeStateValid(droplets[i], isConnected));
+      }
+    }
+
+    async.parallelLimit(tasks, 20, function(err, res) {
+      if (err) {
+        throw err;
+      }
+      var count = 0;
+      /*jshint forin: false */
+      for (var i in res) {
+        /*jshint forin: true */
+        if (res[ i ]) {
+          count++;
         }
       }
-      if (droplets.length === 0) {
-        var msg = 'No droplets found for user %s for the selected library %s. Setup a network and try again';
-        return callback(nodeUtil.format(msg, auth.getUserName(), selectedLibraryKey));
-      }
-      callback();
+      return callback(count);
     });
   };
 
-  var startChurning = function() {
-    var runningNodesCount = 0;
-    var nodesStarted = 0;
-    var nodesStopped = 0;
-    var dropletsToChurn =
-        droplets.slice(0, nonChurnNodeBounds.lowerBound - 1).concat(droplets.slice(nonChurnNodeBounds.upperBound));
-
-    var getRandomIndex = function() {
-      return Math.floor(Math.random() * dropletsToChurn.length);
-    };
-
+  var ToggleNode = function (droplet, stageOption) {
     var getNodeIndexFromName = function(name) {
       return name.split(/[- ]+/).pop();
     };
 
-    var StartNode = function(droplet) {
+    var startNode = function(cb) {
       var cmd = 'tmux new-session -d \". ~/.bash_profile;teamocil settings\"';
       var nodeIndex = getNodeIndexFromName(droplet.name);
       executeCommandOnDroplet(droplet, cmd, function(err) {
         if (err) {
-          /*jshint camelcase: false */
-          // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
-          return console.log('Failed to start: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
-          // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
-          /*jshint camelcase: true */
+          console.log('Failed to start: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
+          throw err;
         }
-        droplet.isRunning = true;
-        runningNodesCount++;
-        nodesStarted++;
-        console.log('Started: Node %s \t Current Network Size: %s', nodeIndex, runningNodesCount);
-        console.log('Completed Churn Event: %s \t Nodes Started %s \t Nodes Stopped %s',
-            nodesStarted + nodesStopped, nodesStarted, nodesStopped);
+
+        nodesStartedCount++;
+        console.log('Started: Node %s ', nodeIndex);
+        return cb(null);
       });
     };
 
-    var StopNode = function(droplet) {
-      var cmd = 'tmux kill-session; mv ~/Node.log Node_`date +%Y_%m_%d_%H:%M:%S`.log || true' ;
+    var stopNode = function(cb) {
+      var cmd = config.tmuxKillAllSessions + '; mv ~/Node.log Node_`date +%Y_%m_%d_%H-%M-%S`.log || true' ;
       var nodeIndex = getNodeIndexFromName(droplet.name);
-      executeCommandOnDroplet(droplet, cmd, function(err) {
-        if (err) {
-          /*jshint camelcase: false */
-          // jscs:disable requireCamelCaseOrUpperCaseIdentifiers
-          return console.log('Failed to stop: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
-          // jscs:enable requireCamelCaseOrUpperCaseIdentifiers
-          /*jshint camelcase: true */
+      executeCommandOnDroplet(droplet, cmd, function(killErr) {
+        if (killErr) {
+          console.log('Failed to stop: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
+          throw killErr;
         }
-        droplet.isRunning = false;
-        runningNodesCount--;
-        nodesStopped++;
-        console.log('Stopped: Node %s \t Current Network Size: %s', nodeIndex, runningNodesCount);
-        console.log('Completed Churn Event: %s \t Nodes Started %s \t Nodes Stopped %s',
-            nodesStarted + nodesStopped, nodesStarted, nodesStopped);
+
+        nodesStoppedCount++;
+        console.log('Stopped: Node %s', nodeIndex);
+        return cb(null);
+      });
+    };
+
+    this.run = function(callback) {
+      executeCommandOnDroplet(droplet, grepIsNodeConnected, function (isNodeConnectedErr) {
+        if (isNodeConnectedErr) {
+          return executeCommandOnDroplet(droplet, grepIsNodeStarted, function (isNodeStartedErr) {
+            if (isNodeStartedErr && stageOption != stageOptions.MERGES) {
+              return startNode(callback);
+            } else if (isNodeStartedErr) {
+              console.log('Ignore - Node %s - already stopped', getNodeIndexFromName(droplet.name));
+            } else if (stageOption == stageOptions.NORMAL) {
+              console.log('Ignore - Node %s - waiting to connect', getNodeIndexFromName(droplet.name));
+            } else if (stageOption == stageOptions.MERGES) {
+              return stopNode(callback);
+            }
+
+            return callback(null);
+          });
+        } else if (stageOption != stageOptions.SPLITS) {
+          return stopNode(callback);
+        }
+
+        return callback(null);
+      });
+    };
+    return this.run;
+  };
+
+  var RunNormalChurn = function (dropletsToChurn, count) {
+    this.run = function(callback) {
+      console.log('Churn Iteration: %s', count);
+      var indexes = getRandomIndexes(dropletsToChurn.length);
+      var tasks = [];
+      indexes.forEach(function (index) {
+        tasks.push(new ToggleNode(dropletsToChurn[index], stageOptions.NORMAL));
+      });
+
+      async.parallelLimit(tasks, 20, function() {
+        return setTimeout(callback, churnFrequency);
+      });
+    };
+    return this.run;
+  };
+
+  var RunMergeChurn = function (dropletsToChurn, callback) {
+    var indexes = getRandomIndexes(dropletsToChurn.length);
+    var tasks = [];
+    indexes.forEach(function (index) {
+      tasks.push(new ToggleNode(dropletsToChurn[index], stageOptions.MERGES));
+    });
+
+    async.parallelLimit(tasks, 20, function() {
+      return setTimeout(callback, churnFrequency);
+    });
+  };
+
+  var RunStartAllNodes = function (dropletsToChurn, callback) {
+    var tasks = [];
+    dropletsToChurn.forEach(function (droplet) {
+      tasks.push(new ToggleNode(droplet, stageOptions.SPLITS));
+    });
+
+    async.parallelLimit(tasks, 20, function() {
+      return callback(null);
+    });
+  };
+
+  var startChurning = function() {
+    var currentStage = -1;
+    var dropletsToChurn = droplets.slice(0, nonChurnNodeBounds.lowerBound - 1).concat(droplets.slice(nonChurnNodeBounds.upperBound));
+
+    var nextStage = function() {
+      if (currentStage != -1) {
+        console.log('Stage Completed: %s\nTotal Churn Events: %s\t\tStarted: %s\tStopped: %s',
+          stages[ currentStage ], nodesStartedCount + nodesStoppedCount, nodesStartedCount, nodesStoppedCount);
+      }
+      currentStage = (currentStage == stages.length - 1) ? 0 : currentStage + 1;
+      console.log('\nStarting Stage: ' + stages[currentStage]);
+    };
+
+    var normalChurn = function(callback) {
+      var steps = 20; // TODO user input maybe
+      var tasks = [];
+      for (var i = 0; i < steps; ++i) {
+        tasks.push(new RunNormalChurn(dropletsToChurn, i + 1));
+      }
+
+      async.series(tasks, function() {
+        callback(null);
       });
     };
 
     var churn = function() {
-      var droplet = dropletsToChurn[getRandomIndex()];
-      if (droplet.isRunning) {
-        new StopNode(droplet);
-      } else {
-        new StartNode(droplet);
+      if (stages[currentStage] == stageOptions.SPLITS) {
+        return calculateNetworkState(droplets, true, function (connectedNodesCount) {
+          console.log('Connected Nodes: %s', connectedNodesCount);
+          if (connectedNodesCount == droplets.length) {
+            nextStage();
+            return setTimeout(churn, churnFrequency);
+          }
+
+          new RunStartAllNodes(droplets, function () {
+            var splitCycleTimeout = 75;
+            console.log('Waiting %s seconds...', splitCycleTimeout);
+            return setTimeout(churn, splitCycleTimeout * 1000);
+          });
+        });
       }
+
+      if (stages[currentStage] == stageOptions.MERGES) {
+        return calculateNetworkState(droplets, false, function (startedNodesCount) {
+          console.log('Running Nodes: %s', startedNodesCount);
+          if (startedNodesCount < droplets.length / 2) {
+            nextStage();
+            return setTimeout(churn, churnFrequency);
+          }
+
+          new RunMergeChurn(dropletsToChurn, churn);
+        });
+      }
+
+      // Normal Churn
+      normalChurn(function() {
+        nextStage();
+        churn();
+      });
     };
 
-    console.log('Calculating current network size\n');
-    var tasks = [];
-    for (var i in droplets) {
-      if (droplets[i]) {
-        tasks.push(new GetDropletStatus(droplets[i]));
-      }
+    // Startup condition
+    if (currentStage == -1) {
+      calculateNetworkState(droplets, true, function (connectedNodesCount) {
+        console.log('Current Network Size: %s', connectedNodesCount);
+        nextStage();
+        churn();
+      });
     }
-
-    async.parallel(tasks, function(err, res) {
-      if (err) {
-        throw err;
-      }
-      /*jshint forin: false */
-      for (var i in res) {
-        /*jshint forin: true */
-        // TODO remove the jshint lookfunc error instead of suppressing it
-        /*jshint loopfunc: true */
-        dropletsToChurn.some(function(el) {
-          /*jshint loopfunc: false */
-          if (el.name.indexOf(droplets[i].name) === 0) {
-            el.isRunning = res[i];
-            return true;
-          }
-        });
-        if (res[i]) {
-          runningNodesCount++;
-        }
-      }
-
-      console.log('Current Network Size: %s\n\nStarting Churn...\n', runningNodesCount);
-      setInterval(churn, churnFrequency * 1000);
-    });
   };
 
   var prepare = function(selectedOption) {
@@ -238,9 +371,10 @@ exports = module.exports = function() {
     }
     var waterfallTasks = [];
     waterfallTasks.push(
-        getDroplets,
-        getNonChurnNodes,
-        getChurnFrequency
+      getDroplets,
+      getNonChurnNodes,
+      getChurnFrequency,
+      getChurnIntensity
     );
 
     async.waterfall(waterfallTasks, function(err) {
@@ -284,7 +418,7 @@ exports = module.exports = function() {
     }
 
     utils.postQuestion('Please choose the entry for which the network will be churned: ' +
-    libOptions, onOptionSelected);
+      libOptions, onOptionSelected);
   };
 
   showOptions();

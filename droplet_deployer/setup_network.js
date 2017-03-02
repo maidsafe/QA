@@ -126,12 +126,12 @@ exports = module.exports = function(args) {
           createdDroplets = existingDroplets;
           console.log('Clearing previous network state');
           var dropletIps = utils.getDropletIps(createdDroplets);
-          var sshCommand = 'tmux kill-session;';
+          var sshCommand = config.tmuxKillAllSessions + ';';
           sshCommand += 'rm *.log;';
           sshCommand += 'rm log.toml;';
           sshCommand += nodeUtil.format('rm %s* || true', binaryName);
           var requests = generateSSHRequests(dropletIps, sshCommand);
-          async.parallel(requests, function(err) {
+          async.parallelLimit(requests, 20, function(err) {
             if (!err) {
               console.log('Network state cleared successfully.\n');
               networkSize = existingDroplets.length;
@@ -401,7 +401,7 @@ exports = module.exports = function(args) {
           requests.push(new TempFunc(idList[i]));
         }
       }
-      async.parallel(requests, function(err, droplets) {
+      async.parallelLimit(requests, 20, function(err, droplets) {
         if (err) {
           callback(err);
           return;
@@ -613,7 +613,7 @@ exports = module.exports = function(args) {
 
       console.log('Started first Node.');
       console.log('Starting remaining nodes in parallel');
-      async.parallel(normalRequests, function(err) {
+      async.parallelLimit(normalRequests, 20, function(err) {
         if (!err) {
           console.log('All droplet nodes started.\n');
           return callback(null);
