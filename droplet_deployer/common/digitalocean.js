@@ -50,6 +50,7 @@ var Api = function(token, testMode) {
       'backups': false,
       'ipv6': true,
       'user_data': null,
+      'monitoring': true,
       'private_networking': null
     };
     if (testMode) {
