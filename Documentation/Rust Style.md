@@ -4,9 +4,7 @@ We don't maintain a separate style guide but in general try to follow [common go
 
 ## Rust version
 
-We currently use Rust stable 1.14.0.
-
-Note that Rust 1.15.0 and Rust 1.15.1 have some known [issues](https://github.com/rust-lang/cargo/issues/3698) with the way that cargo workspaces are handled, which is a feature we make use of in some crates.
+We currently use Rust stable 1.16.0.
 
 ## Unwrap
 
@@ -41,12 +39,16 @@ In `impl`s, always put public functions before private ones.
 
 If a crate has that feature, make sure your code does not produce any new errors when compiling with `--features=clippy`. If you don't agree with a [Clippy lint](https://github.com/Manishearth/rust-clippy#lints), discuss it with the team before explicitly adding an `#[allow(lint)]` attribute.
 
-For clippy, we currently use Rust nightly-2016-12-19 and Clippy 0.0.104.
+For clippy, we currently use Clippy 0.0.120 and nightly installed by `rustup install nightly-2017-03-16`:
+```rust
+rustc --version
+rustc 1.17.0-nightly (0aeb9c129 2017-03-15)
+```
 
 **Note for Windows users:** Due to a recent bug in rustup, you may get a missing dll error when trying to run `cargo clippy`.  In this case, you can work around the issue by modifying your `PATH` environment variable:
 
 ```
-setx PATH "%USERPROFILE%\.multirust\toolchains\nightly-2016-12-19-x86_64-pc-windows-gnu\bin;%PATH%"
+setx PATH "%USERPROFILE%\.multirust\toolchains\nightly-2017-03-16-x86_64-pc-windows-gnu\bin;%PATH%"
 ```
 
 ## Cargo
