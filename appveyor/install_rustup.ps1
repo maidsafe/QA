@@ -43,3 +43,7 @@ if (!$?) {
 }
 ""
 ""
+
+# Temporary workaround for Curl SSL error (see https://github.com/rust-lang/cargo/issues/4072)
+md .cargo -Force
+"[http]`ncheck-revoke = false" | Out-File .cargo\config
