@@ -7,6 +7,10 @@ if ($env:PLATFORM -eq "x86") {
     $arch = "x86_64"
 }
 
+# Temporary work around for AppVeyor CI issues (see https://github.com/rust-lang-nursery/rand/commit/bb78689)
+$env:RUSTUP_USE_HYPER = 1
+$env:CARGO_HTTP_CHECK_REVOKE = false
+
 # Install gcc if required
 bash -lc "pacman -S --noconfirm --needed mingw-w64-$arch-gcc"
 
