@@ -7,6 +7,11 @@ if ($env:PLATFORM -eq "x86") {
     $arch = "x86_64"
 }
 
+# Determine the toolchain to install
+if (-not (Test-Path env:RUST_TOOLCHAIN)) {
+    $env:RUST_TOOLCHAIN = '1.17.0'
+}
+
 # Temporary work around for AppVeyor CI issues (see https://github.com/rust-lang-nursery/rand/commit/bb78689)
 $env:RUSTUP_USE_HYPER = 1
 $env:CARGO_HTTP_CHECK_REVOKE = false
@@ -21,7 +26,7 @@ $installer = $env:TEMP + "\rustup-init.exe"
 
 # Run installer
 $installer = $installer.Replace("\", "/")
-bash -lc "$installer -y --default-host $arch-pc-windows-gnu"
+bash -lc "$installer -y --default-host $arch-pc-windows-gnu --default-toolchain $env:RUST_TOOLCHAIN"
 
 # Add rustup to path
 $env:Path = $env:USERPROFILE + "\.cargo\bin;" + $env:Path
