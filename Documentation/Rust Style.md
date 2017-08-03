@@ -4,7 +4,7 @@ We don't maintain a separate style guide but in general try to follow [common go
 
 ## Rust version
 
-We currently use Rust stable 1.17.0.
+We currently use Rust stable 1.19.0.
 
 ## Unwrap
 
@@ -12,11 +12,12 @@ Don't unwrap [`Option`](https://doc.rust-lang.org/std/option/enum.Option.html)s 
 
 1. locking a mutex,
 2. spawning a thread,
-3. joining a thread
+3. joining a thread,
+4. writing tests or examples
 
 or in other patterns where using them makes the code _much simpler_ and it is _obvious at first glance_ to the reader (even one unfamiliar with the code) that the value cannot be `None`/`Err`.
 
-In these cases, as well as in tests, consider using the macros from the [`unwrap` crate](https://crates.io/crates/unwrap).
+In these cases, prefer to use the macro from the [`unwrap` crate](https://crates.io/crates/unwrap).
 
 ## Threads
 
@@ -29,7 +30,7 @@ This can easily be achieved by preferring to create child threads using [`maidsa
 
 ## Rustfmt
 
-Apply the latest `rustfmt` to new code before committing, using the default configuration or, if present, the repository's `rustfmt.toml` file.
+Apply `rustfmt` to new code before committing, using the default configuration or, if present, the repository's `rustfmt.toml` file.  We currently use rustfmt 0.9.0.
 
 ## Function ordering
 
@@ -37,19 +38,20 @@ In `impl`s, always put public functions before private ones.
 
 ## Clippy
 
-If a crate has that feature, make sure your code does not produce any new errors when compiling with `--features=clippy`. If you don't agree with a [Clippy lint](https://github.com/Manishearth/rust-clippy#lints), discuss it with the team before explicitly adding an `#[allow(lint)]` attribute.
+Crates are tested using cargo-clippy; make sure your code does not produce any new errors when running Clippy. If you don't agree with a [Clippy lint](https://github.com/Manishearth/rust-clippy#lints), discuss it with the team before explicitly adding a `#[cfg_attr(feature="cargo-clippy", allow(<lint>))]` attribute.
 
-For clippy, we currently use Clippy 0.0.128 and nightly installed by `rustup install nightly-2017-04-28`:
-```rust
-rustc --version
-rustc 1.18.0-nightly (94e884b63 2017-04-27)
+We currently use Clippy 0.0.144 which needs to be installed and run with Rust nightly-2017-07-20:
+```
+rustup install nightly-2017-07-20
+cargo +nightly-2017-07-20 install clippy -f --vers=0.0.144
 ```
 
-**Note for Windows users:** Due to a recent bug in rustup, you may get a missing dll error when trying to run `cargo clippy`.  In this case, you can work around the issue by modifying your `PATH` environment variable:
-
+To run Clippy:
 ```
-setx PATH "%USERPROFILE%\.multirust\toolchains\nightly-2017-04-28-x86_64-pc-windows-gnu\bin;%PATH%"
+cargo +nightly-2017-07-20 clippy
+cargo +nightly-2017-07-20 clippy --profile test
 ```
+If the crate being tested also defines features, these two Clippy commands should also be run with each feature enabled.
 
 ## Cargo
 
