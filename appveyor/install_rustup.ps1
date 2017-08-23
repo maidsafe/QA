@@ -16,15 +16,20 @@ if (-not (Test-Path env:RUST_TOOLCHAIN)) {
 $env:RUSTUP_USE_HYPER = 1
 $env:CARGO_HTTP_CHECK_REVOKE = false
 
-# Install gcc if required
-Try {
-  Invoke-Expression "bash -lc `"pacman -S --noconfirm --needed mingw-w64-$arch-gcc`"" -ErrorVariable error_var 2>$null
-} Finally {
+'Function InvokeInCmd {
+  Write-Host "Running $args" -ForegroundColor Yellow
+  cmd /c $args ''2>&1''
   if ($LastExitCode -ne 0) {
-    $error_var
     exit $LastExitCode
   }
+  Write-Host "Completed $args" -ForegroundColor Green
 }
+Export-ModuleMember -Function InvokeInCmd' | Set-Content -Path .\appveyor_helper.psm1
+
+Import-Module -Name .\appveyor_helper.psm1
+
+# Install gcc if required
+InvokeInCmd bash -lc "pacman -S --noconfirm --needed mingw-w64-$arch-gcc"
 
 # Download Rust installer
 $url = "https://static.rust-lang.org/rustup/dist/$arch-pc-windows-gnu/rustup-init.exe"
@@ -33,14 +38,7 @@ $installer = $env:TEMP + "\rustup-init.exe"
 
 # Run installer
 $installer = $installer.Replace("\", "/")
-Try {
-  Invoke-Expression "bash -lc `"$installer -y --default-host $arch-pc-windows-gnu --default-toolchain $env:RUST_TOOLCHAIN`"" -ErrorVariable error_var 2>$null
-} Finally {
-  if ($LastExitCode -ne 0) {
-    $error_var
-    exit $LastExitCode
-  }
-}
+InvokeInCmd bash -lc "$installer -y --default-host $arch-pc-windows-gnu --default-toolchain $env:RUST_TOOLCHAIN"
 
 # Add rustup to path
 $env:Path = $env:USERPROFILE + "\.cargo\bin;" + $env:Path
