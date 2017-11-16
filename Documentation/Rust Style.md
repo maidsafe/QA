@@ -57,6 +57,8 @@ If the crate being tested also defines features, these two Clippy commands shoul
 
 Use `cargo-edit` to update dependencies or keep the `Cargo.toml` in the formatting that `cargo-edit` uses.
 
+Also make sure to observe our [update policy](Backend Update Policy.md).
+
 ## Other crates
 
 Adding new dependencies to MaidSafe crates in general should be discussed in the team first, except if other MaidSafe crates already have the same dependency. E.g. [quick-error](https://crates.io/crates/quick-error) and [unwrap](https://crates.io/crates/unwrap) are fine to use.
