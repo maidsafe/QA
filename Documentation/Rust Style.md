@@ -4,7 +4,7 @@ We don't maintain a separate style guide but in general try to follow [common go
 
 ## Rust version
 
-We currently use Rust stable 1.22.1.
+We currently use Rust stable 1.24.0.
 
 ## Unwrap
 
@@ -40,16 +40,16 @@ In `impl`s, always put public functions before private ones.
 
 Crates are tested using cargo-clippy; make sure your code does not produce any new errors when running Clippy. If you don't agree with a [Clippy lint](https://github.com/Manishearth/rust-clippy#lints), discuss it with the team before explicitly adding a `#[cfg_attr(feature="cargo-clippy", allow(<lint>))]` attribute.
 
-We currently use Clippy 0.0.179 which needs to be installed and run with Rust nightly-2018-01-10:
+We currently use Clippy 0.0.186 which needs to be installed and run with Rust nightly-2018-02-05:
 ```
-rustup install nightly-2018-01-10
-cargo +nightly-2018-01-10 install clippy -f --vers=0.0.179
+rustup install nightly-2018-02-05
+cargo +nightly-2018-02-05 install clippy -f --vers=0.0.186
 ```
 
 To run Clippy:
 ```
-cargo +nightly-2018-01-10 clippy
-cargo +nightly-2018-01-10 clippy --profile test
+cargo +nightly-2018-02-05 clippy
+cargo +nightly-2018-02-05 clippy --profile test
 ```
 If the crate being tested also defines features, these two Clippy commands should also be run with each feature enabled.
 
