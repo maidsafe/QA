@@ -1,0 +1,93 @@
+#!/bin/bash
+
+# Copyright 2017 The Grin Developers
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This hook will
+# - ensure that the canonical versions of rustfmt and clippy are installed
+# - run rustfmt
+# - run clippy
+#
+# To enable it, copy this file to .git/hooks/pre-commit in the repository of
+# interest.
+
+result=0
+
+rustfmt --version &>/dev/null
+if [ $? != 0 ]; then
+    printf "[pre_commit] \033[0;31merror\033[0m: \"rustfmt\" not available?\n"
+    result=1
+fi
+
+if [[ ! "$(rustfmt --version)" =~ "0.9.0" ]]; then
+    printf "[pre_commit] \033[0;31merror\033[0m: \"rustfmt\": version 0.9.0 needed.\n"
+    result=1
+fi
+
+cargo +nightly-2018-01-10 clippy -- --version &>/dev/null
+if [ $? != 0 ]; then
+    printf "[pre_commit] \033[0;31merror\033[0m: \"clippy\" not available?\n"
+    result=1
+fi
+
+if [[ ! "$(cargo +nightly-2018-01-10 clippy -- --version)" =~ "0.0.179" ]]; then
+    printf "[pre_commit] \033[0;31merror\033[0m: \"clippy\": version 0.0.179 needed.\n"
+    result=1
+fi
+
+if [[ $result != 0 ]]; then
+    printf "[pre_commit] see https://github.com/maidsafe/QA/blob/master/Documentation/Rust\ Style.md\n"
+    printf "[pre_commit] for information on how to get setup\n"
+    exit 1
+fi
+
+problem_files=()
+
+printf "[pre_commit] rustfmt "
+for file in $(git diff --name-only --cached); do
+    if [ ${file: -3} == ".rs" ]; then
+        rustfmt --skip-children --write-mode=diff $file &>/dev/null
+        if [ $? != 0 ]; then
+        	problem_files+=($file)
+            result=1
+        fi
+    fi
+done
+
+if [ $result != 0 ]; then
+    printf "\033[0;31mfail\033[0m \n"
+    printf "[pre_commit] the following files need formatting: \n"
+
+    for file in $problem_files; do
+        printf "    rustfmt $file\n"
+        rustfmt $file
+    done
+else
+  printf "\033[0;32mok\033[0m \n"
+fi
+
+printf "[pre_commit] clippy "
+cargo +nightly-2018-01-10 clippy &>.clippy.out
+if [ $? != 0 ]; then
+	result=1
+    printf "\033[0;31mfail\033[0m \n"
+    printf "[pre_commit] the following issues need to be adressed: \n"
+    cat .clippy.out
+    rm .clippy.out
+else
+  	rm .clippy.out
+  	printf "\033[0;32mok\033[0m \n"
+fi
+
+exit $result
