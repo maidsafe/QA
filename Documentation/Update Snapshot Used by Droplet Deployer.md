@@ -18,9 +18,9 @@
 
 
 [0]: https://cloud.digitalocean.com/images/snapshots
-[1]: https://github.com/maidsafe/release_config/blob/master/droplets/credentials.json#L3
+[1]: https://github.com/maidsafe/release_config/blob/master/droplets/credentials.json#L4
 [2]: https://cloud.digitalocean.com/settings/api/tokens/new
-[3]: https://github.com/maidsafe/QA/blob/master/droplet_deployer/config.json#L37
+[3]: https://github.com/maidsafe/QA/blob/master/droplet_deployer/config.json#L39
 [4]: https://github.com/maidsafe/QA/tree/master/droplet_deployer
 [5]: https://cloud.digitalocean.com/settings/api/tokens
 [6]: https://cloud.digitalocean.com/droplets
