@@ -7,7 +7,7 @@
 1. Replicate [the snapshot][0] to all regions (click the "More" option, then "Add to Region").
 1. Rename the [old snapshot][0] to `Old Droplet Deployer` (check "Created" values).
 1. [Generate a new Personal Access Token][2].
-1. To get the ID of the newly-created snapshot, run `curl -sX GET -H "Content-Type: application/json" -H "Authorization: Bearer <token here>" "https://api.digitalocean.com/v2/images?private=true" | sed -n 's/.*"id":\([^,]*\),"name":"Droplet Deployer".*/\n\1\n\n/p'`
+1. To get the ID of the newly-created snapshot, run `curl -sX GET -H "Content-Type: application/json" -H "Authorization: Bearer <token here>" "https://api.digitalocean.com/v2/images?private=true" | sed -n 's/.*"id":\([^,]*\),"name":"Droplet Deployer".*/\1/p'`
 1. If this doesn't yield an ID, it may be due to pagination of the response; you may need to add `&page=2` (or whatever value the last page has) to the end of the URL after `private=true`.  Alternatively, check that the [new snapshot][0] has finished being created.
 1. Replace the existing value of `"imageId"` in [Droplet Deployer's config.json file][3] with the new one.
 1. Test the [Droplet Deployer][4] tool.
