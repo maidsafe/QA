@@ -9,7 +9,7 @@ var AuthManager = function() {
   var async = require('async');
   var exec = require('child_process').exec;
   var config = require('../config.json');
-  var CLONED_REPO_NAME = 'qa_repo';
+  var CLONED_REPO_NAME = 'assets_repo';
   var TOKEN_KEY = 'digitalOceanToken';
   var PASSWORD_KEY = 'dropletUserPassword';
 
@@ -34,7 +34,7 @@ var AuthManager = function() {
         callback(err);
         return;
       }
-      credentials = require('../' + config.workspace + '/' + CLONED_REPO_NAME + '/droplets/credentials');
+      credentials = require('../' + config.workspace + '/' + CLONED_REPO_NAME + '/QA/credentials');
       callback(null);
     });
   };
@@ -60,6 +60,10 @@ var AuthManager = function() {
 
   this.getDigitalOceanToken = function() {
     return (config.hasOwnProperty(TOKEN_KEY) ? config : credentials)[TOKEN_KEY];
+  };
+
+  this.getVultrToken = function() {
+    return credentials.vultrToken;
   };
 
   this.getDropletUserPassword = function() {

@@ -59,6 +59,10 @@ if (!isPlatformSupported()) {
   return;
 }
 
+process.on('uncaughtException', function(exception) {
+  console.log('Unhandled Exception: ' + exception);
+});
+
 console.log('Validating authentication...');
 auth.init(function(err) {
   if (err) {
