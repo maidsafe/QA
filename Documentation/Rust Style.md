@@ -36,6 +36,31 @@ Apply `rustfmt` to new code before committing, using the default configuration o
 
 In `impl`s, always put public functions before private ones.
 
+## Bringing names into scope (`use` statements)
+
+Generally `use` statements should be employed to bring names from different modules into scope. However, functions from other modules should not be brought fully into scope. Instead their module should be brought into scope meaning that subsequent usage of the function requires one level of qualification. For example, if we have:
+
+```rust
+pub mod a {
+    pub mod b {
+        pub struct Harbour {}
+        pub fn bar() {}
+    }
+}
+```
+
+then the normal `use` statement to bring these into scope would be:
+
+```rust
+use a::b::{self, Harbour};
+```
+
+Requiring functions to be module-qualified allows generically-named functions to be disambiguated, particularly given that [stuttering is discouraged](https://github.com/rust-lang-nursery/rust-clippy/wiki#stutter). For example, `encode()` could exist as a function in modules `hex`, `base32` and `base64`. That function shouldn't be named e.g. `hex::hex_encode()`, so when we use it, it's clearer to write `hex::encode()` rather than just `encode()`.
+
+This policy on imports applies to all repositories apart from safe_client_libs, where functions are also fully brought into scope. This is because the safe_client_libs workspace has many instances of functions which if partially qualified would make the code unnecessarily verbose.
+
+We also have an exception for all repositories using the [serialisation functions](https://docs.rs/maidsafe_utilities/0.15.0/maidsafe_utilities/serialisation/index.html) from maidsafe_utilities. These should always be fully brought into scope, since qualifying any of these with `serialisation::` only increases verbosity without any gain in clarity.
+
 ## Clippy
 
 Crates are tested using cargo-clippy; make sure your code does not produce any new errors when running Clippy. If you don't agree with a [Clippy lint](https://github.com/Manishearth/rust-clippy#lints), discuss it with the team before explicitly adding a `#[cfg_attr(feature="cargo-clippy", allow(<lint>))]` attribute.
