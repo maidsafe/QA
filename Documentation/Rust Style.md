@@ -4,7 +4,7 @@ We don't maintain a separate style guide but in general try to follow [common go
 
 ## Rust version
 
-We currently use Rust stable 1.26.1.
+We currently use Rust stable 1.26.2.
 
 ## Unwrap
 
@@ -65,16 +65,16 @@ We also have an exception for all repositories using the [serialisation function
 
 Crates are tested using cargo-clippy; make sure your code does not produce any new errors when running Clippy. If you don't agree with a [Clippy lint](https://github.com/Manishearth/rust-clippy#lints), discuss it with the team before explicitly adding a `#[cfg_attr(feature="cargo-clippy", allow(<lint>))]` attribute.
 
-We currently use Clippy 0.0.206 which needs to be installed and run with Rust nightly-2018-05-29:
+We currently use Clippy 0.0.207 which needs to be installed and run with Rust nightly-2018-06-10:
 ```
-rustup install nightly-2018-05-29
-cargo +nightly-2018-05-29 install clippy -f --vers=0.0.206
+rustup install nightly-2018-06-10
+cargo +nightly-2018-06-10 install clippy -f --vers=0.0.207
 ```
 
 To run Clippy:
 ```
-cargo +nightly-2018-05-29 clippy
-cargo +nightly-2018-05-29 clippy --profile test
+cargo +nightly-2018-06-10 clippy
+cargo +nightly-2018-06-10 clippy --profile test
 ```
 If the crate being tested also defines features, these two Clippy commands should also be run with each feature enabled.
 
