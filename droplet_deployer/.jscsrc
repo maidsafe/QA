@@ -6,9 +6,7 @@
   "requireSpacesInFunction": {
     "beforeOpeningCurlyBrace": true
   },
-  "disallowSpacesInFunction": {
-    "beforeOpeningRoundBrace": true
-  },
+  "requireCamelCaseOrUpperCaseIdentifiers": "ignoreProperties",
   "disallowSpacesInsideObjectBrackets": null,
   "disallowSpacesInsideArrayBrackets": null,
   "requireSpacesInsideObjectBrackets": "all",

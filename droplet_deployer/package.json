@@ -24,7 +24,8 @@
     "request-json": "^0.5.3",
     "scp2": "^0.2.2",
     "sleep": "^3.0.1",
-    "ssh2": "^0.4.14"
+    "ssh2": "^0.4.14",
+    "vultr": "0.0.6"
   },
   "devDependencies": {
     "grunt": "^0.4.5",
