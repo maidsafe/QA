@@ -9,7 +9,7 @@ if ($env:PLATFORM -eq "x86") {
 
 # Determine the toolchain to install
 if (-not (Test-Path env:RUST_TOOLCHAIN)) {
-    $env:RUST_TOOLCHAIN = '1.26.2'
+    $env:RUST_TOOLCHAIN = '1.28.0'
 }
 
 # Temporary work around for AppVeyor CI issues (see https://github.com/rust-lang-nursery/rand/commit/bb78689)
