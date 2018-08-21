@@ -1,5 +1,5 @@
 {
-  "auth_repo": "git@github.com:maidsafe/release_config.git",
+  "auth_repo": "git@github.com:maidsafe/Assets.git",
   "platforms": ["linux"],
   "workspace": "temp_job",
   "outFolder": "output",
@@ -10,7 +10,7 @@
   "dropletUser": "qa",
   "remotePathToTransferFiles": "/home/qa/",
   "dropletFileHost": "139.59.180.6",
-  "fastBuild": true,
+  "fastBuild": false,
   "tmuxKillAllSessions": "tmux ls | grep : | cut -d. -f1 | awk '{print substr($1, 0, length($1)-1)}' | xargs -L1 -r tmux kill-session -t",
   "libraries" : {
     "CRUST-1": {
@@ -35,9 +35,19 @@
     }
   },
   "listeningPort": 5483,
-  "dropletSize": "1gb",
-  "imageId": 22557691,
-  "concentratedRegion": "lon1",
   "sshKeys": [],
-  "testMode": false
+  "testMode": false,
+  "provider": "digitalOcean",
+  "providerDetails": {
+    "digitalOcean": {
+      "snapshotId": "33346667",
+      "concentratedRegion": "lon1",
+      "size": "s-1vcpu-2gb"
+    },
+    "vultr": {
+      "snapshotId": "c4258c97210c1",
+      "concentratedRegion": 8,
+      "size": ""
+    }
+  }
 }

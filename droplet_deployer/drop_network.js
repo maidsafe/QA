@@ -3,13 +3,15 @@ exports = module.exports = function() {
   var utils = require('./common/utils');
   var auth = require('./common/auth');
   var nodeUtil = require('util');
-  var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken(), config.testMode);
+  var cloudProvider =  config.provider === 'vultr' ?
+    require('./common/vultr').Api(auth.getVultrToken()) :
+    require('./common/digitalocean').Api(auth.getDigitalOceanToken());
   var async = require('async');
   var libraryKey;
   var droplets = [];
 
   var getDropletList = function(callback) {
-    digitalOcean.getDropletList(function(err, list) {
+    cloudProvider.getDropletList(function(err, list) {
       if (err) {
         callback(err);
         return;
@@ -44,7 +46,7 @@ exports = module.exports = function() {
     var requests = [];
     var Executor = function(id) {
       this.run = function(cb) {
-        digitalOcean.deleteDroplet(id, cb);
+        cloudProvider.deleteDroplet(id, cb);
       };
       return this.run;
     };
