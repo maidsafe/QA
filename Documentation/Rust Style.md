@@ -4,7 +4,7 @@ We don't maintain a separate style guide but in general try to follow [common go
 
 ## Rust version
 
-We currently use Rust stable 1.26.2.
+We currently use Rust stable 1.28.0.
 
 ## Unwrap
 
@@ -30,7 +30,7 @@ This can easily be achieved by preferring to create child threads using [`maidsa
 
 ## Rustfmt
 
-Apply `rustfmt` to new code before committing, using the default configuration or, if present, the repository's `rustfmt.toml` file. We currently use [rustfmt-nightly](https://crates.io/crates/rustfmt-nightly) 0.8.2.
+Apply `rustfmt` to new code before committing, using the default configuration or, if present, the repository's `rustfmt.toml` file. We currently use [rustfmt-nightly](https://crates.io/crates/rustfmt-nightly) 0.99.2.
 
 ## Function ordering
 
@@ -65,16 +65,16 @@ We also have an exception for all repositories using the [serialisation function
 
 Crates are tested using cargo-clippy; make sure your code does not produce any new errors when running Clippy. If you don't agree with a [Clippy lint](https://github.com/Manishearth/rust-clippy#lints), discuss it with the team before explicitly adding a `#[cfg_attr(feature="cargo-clippy", allow(<lint>))]` attribute.
 
-We currently use Clippy 0.0.207 which needs to be installed and run with Rust nightly-2018-06-10:
+We currently use Clippy 0.0.212 which needs to be installed and run with Rust nightly-2018-07-07:
 ```
-rustup install nightly-2018-06-10
-cargo +nightly-2018-06-10 install clippy -f --vers=0.0.207
+rustup install nightly-2018-07-07
+cargo +nightly-2018-07-07 install clippy -f --vers=0.0.212
 ```
 
 To run Clippy:
 ```
-cargo +nightly-2018-06-10 clippy
-cargo +nightly-2018-06-10 clippy --profile test
+cargo +nightly-2018-07-07 clippy
+cargo +nightly-2018-07-07 clippy --profile test
 ```
 If the crate being tested also defines features, these two Clippy commands should also be run with each feature enabled.
 
