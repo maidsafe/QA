@@ -29,6 +29,16 @@ run `npm install`
 
 `npm start` - Follow the default flow of the tool as listed [here](script_flow.md)
 
+## Configs
+
+There is `config.json` file which allows you to tweek somer of the droplet
+deployer parameters.
+
+* `dropletSshPrivKeyPath` - full path to the private key used for SSH
+  connection. If not specified, username/password authentication will be used.
+  Example: "/home/povilas/.ssh/id_rsa"
+
+
 ## TODO
   At present the droplet list from digitalocean fetches maximum of 500 droplets only.
   Implement proper pagination based on the meta data

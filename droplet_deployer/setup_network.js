@@ -56,12 +56,19 @@ exports = module.exports = function(args) {
    *    specific options, e.g. for authentication.
    */
   function makeSSHOptions(ip, config) {
-      return {
-        host: ip,
-        username: config.dropletUser,
-        password: auth.getDropletUserPassword(),
-        readyTimeout: 99999
-      };
+    var opts =  {
+      host: ip,
+      username: config.dropletUser,
+      readyTimeout: 99999
+    };
+
+    if ('dropletSshPrivKeyPath' in config) {
+      opts.privateKey = fs.readFileSync(config.dropletSshPrivKeyPath);
+    } else {
+      opts.password = auth.getDropletUserPassword();
+    }
+
+    return opts;
   }
 
   // Helper fn to populate ssh requests to multiple ips
