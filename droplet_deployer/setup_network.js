@@ -444,6 +444,33 @@ exports = module.exports = function(args) {
     setTimeout(getDropletsInfo, 5 * 1000);
   };
 
+  /**
+   * Installs required packages into the droplets.
+   */
+  function setupDroplets(callback) {
+    if (isUsingExistingDroplets) {
+      return callback();
+    }
+
+    var sshCommand = 'sudo apt-get update && ' +
+        'sudo apt-get install -y ruby && ' +
+        'sudo gem install teamocil && ' +
+        'mkdir -p ~/.teamocil &&' +
+        'touch ~/.bash_profile';
+    let requests = createdDroplets.map(droplet => generateSSHRequests(
+      [droplet.networks.v4[0].ip_address], sshCommand)[0]);
+
+    console.log('Installing packages into droplets...');
+    async.parallelLimit(requests, 20, err => {
+      if (!err) {
+        console.log('Packages installed successfully.\n');
+        return callback(null);
+      }
+
+      return callback(err);
+    });
+  }
+
   var SetHostnames = function(callback) {
     if (isUsingExistingDroplets || config.provider !== 'vultr') {
       return callback();
@@ -748,6 +775,7 @@ exports = module.exports = function(args) {
         getNetworkType,
         createDroplets,
         getDroplets,
+        setupDroplets,
         SetHostnames,
         clearOutputFolder,
         generateIPListFile,
