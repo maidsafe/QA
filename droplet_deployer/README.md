@@ -37,7 +37,10 @@ deployer parameters.
 * `dropletSshPrivKeyPath` - full path to the private key used for SSH
   connection. If not specified, username/password authentication will be used.
   Example: "/home/povilas/.ssh/id_rsa"
-
+* `digitalOceanToken` - basically what it says on the tin: use the give token
+  for digital ocean API authentication. If this value is not specified, it will
+  be retrieved from `auth_repo`.
+  Example: "a2e053aea17b84085a794c77005aa0726a418bfc18b4e1550d36abc6d14cacab"
 
 ## TODO
   At present the droplet list from digitalocean fetches maximum of 500 droplets only.
