@@ -47,6 +47,23 @@ exports = module.exports = function(args) {
 
   var PROVIDER_DETAILS = config.providerDetails[config.provider];
 
+  /**
+   * A helper function to construct SSH options given target machine IP and
+   * config.
+   *
+   * @param {string} ip
+   * @param {object} config - droplet deployer config that also includes SSH
+   *    specific options, e.g. for authentication.
+   */
+  function makeSSHOptions(ip, config) {
+      return {
+        host: ip,
+        username: config.dropletUser,
+        password: auth.getDropletUserPassword(),
+        readyTimeout: 99999
+      };
+  }
+
   // Helper fn to populate ssh requests to multiple ips
   var generateSSHRequests = function(ips, cmd) {
     var Handler = function(sshOptions) {
@@ -76,13 +93,7 @@ exports = module.exports = function(args) {
     };
     var requests = [];
     ips.forEach(function(ip) {
-      var sshOptions = {
-        host: ip,
-        username: config.dropletUser,
-        password: auth.getDropletUserPassword(),
-        readyTimeout: 99999
-      };
-      requests.push(new Handler(sshOptions));
+      requests.push(new Handler(makeSSHOptions(ip, config)));
     });
     return requests;
   };
@@ -619,13 +630,8 @@ exports = module.exports = function(args) {
       }
 
       console.log('Transferring new files');
-      var scpOptions = {
-        host: config.dropletFileHost,
-        username: config.dropletUser,
-        password: auth.getDropletUserPassword(),
-        path: nodeUtil.format('/var/www/html/%s/', pattern),
-        readyTimeout: 99999
-      };
+      var scpOptions = makeSSHOptions(config.dropletFileHost, config);
+      scpOptions.path = nodeUtil.format('/var/www/html/%s/', pattern);
       scpClient.scp(config.outFolder + '/scp/', scpOptions, function(err) {
         if (!err) {
           console.log('File transfer completed successfully.\n');
