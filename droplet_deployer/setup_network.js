@@ -466,7 +466,7 @@ exports = module.exports = function(args) {
    * Installs required packages into the droplets.
    */
   function setupDroplets(callback) {
-    if (isUsingExistingDroplets) {
+    if (!PROVIDER_DETAILS.freshInstall) {
       return callback();
     }
 

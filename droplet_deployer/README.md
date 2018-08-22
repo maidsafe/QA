@@ -41,6 +41,34 @@ deployer parameters.
   for digital ocean API authentication. If this value is not specified, it will
   be retrieved from `auth_repo`.
   Example: "a2e053aea17b84085a794c77005aa0726a418bfc18b4e1550d36abc6d14cacab"
+* `providerDetails` {object} - droplet provider specific configs.
+  Example:
+
+```json
+  "providerDetails": {
+    "digitalOcean": {
+      "snapshotId": "37206537",
+      "concentratedRegion": "lon1",
+      "size": "s-1vcpu-2gb"
+    }
+  }
+```
+* `providerDetails.providerName.freshInstall` {bool} - if true install
+  dependencies to a newly created droplet. If you're using a snaphsot image
+  with already installed dependencies, either leave this option unspecified
+  or make it `false`.
+  Example:
+
+```json
+  "providerDetails": {
+    "digitalOcean": {
+      "freshInstall": true,
+      "snapshotId": "37206537",
+      "concentratedRegion": "lon1",
+      "size": "s-1vcpu-2gb"
+    }
+  }
+```
 
 ## TODO
   At present the droplet list from digitalocean fetches maximum of 500 droplets only.
