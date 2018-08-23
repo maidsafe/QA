@@ -114,10 +114,6 @@ Above is a screenshot and below is a template, best take the markdown from anoth
 [![](https://img.shields.io/badge/Project%20SAFE-Approved-green.svg)](http://maidsafe.net/applications) [![](https://img.shields.io/badge/License-GPL3-green.svg)](https://github.com/maidsafe/crust/blob/master/COPYING)
 
 
-**Primary Maintainer:** < name > (< email_address >)
-
-**Secondary Maintainer:** < name > (< email_address >)
-
 Reliable peer-to-peer network connections in Rust with NAT traversal.
 
 |Crate|Linux/OS X|Windows|Coverage|Issues|
