@@ -34,7 +34,7 @@
       "tmuxCommand": "./safe_vault $IS_FIRST_NODE"
     }
   },
-  "listeningPort": 5483,
+  "listeningPort": 6666,
   "sshKeys": [],
   "testMode": false,
   "provider": "digitalOcean",
