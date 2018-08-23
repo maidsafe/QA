@@ -531,22 +531,37 @@ exports = module.exports = function(args) {
     callback(null);
   };
 
-  var generateStdConfigFile = function(callback) {
-    var configFile;
-    configFile = require('./std_config_template.json');
-    var stdListeningPort = listeningPort | config.listeningPort;
-    configFile.tcp_acceptor_port = stdListeningPort;
-    configFile.hard_coded_contacts = generateEndPoints(true, stdListeningPort);
+  /**
+   * @param config {object} - droplet deployer config that also has Crust
+   *    specific options. NOTE, that config is a public variable, but
+   *    this is my attempt to reduce the use of public variables.
+   * @returns {object} Crust config filled with values from droplet deployer
+   *    config.
+   */
+  function genCrustConf(config) {
+    var conf = require('./std_config_template.json');
+    let listenerPort = listeningPort | config.listeningPort;
+    conf.listen_addresses = conf.listen_addresses.map(addr => addr + listenerPort);
+    conf.output_encryption_keys = config.crustEncryptionKeysFile;
+
+    conf.hard_coded_contacts = generateEndPoints(true, listenerPort);
+
     if (isWhitelistedNetwork) {
-      configFile.whitelisted_node_ips = generateEndPoints();
+      conf.whitelisted_node_ips = generateEndPoints();
     } else {
-      configFile.whitelisted_node_ips = null;
+      conf.whitelisted_node_ips = null;
     }
-    configFile.network_name = networkName;
+    conf.network_name = networkName;
+
+    return conf;
+  }
+
+  function genCrustConfFile(callback) {
+    let conf = genCrustConf(config);
     var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig.example : selectedLibraryRepoName;
-    fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.crust.config', JSON.stringify(configFile, null, 2));
+    fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.crust.config', JSON.stringify(conf, null, 2));
     callback(null);
-  };
+  }
 
   var generateVaultConfigFile = function(callback) {
     var configFile;
@@ -792,7 +807,7 @@ exports = module.exports = function(args) {
         SetHostnames,
         clearOutputFolder,
         generateIPListFile,
-        generateStdConfigFile
+        genCrustConfFile
     );
 
     if (binaryName === 'safe_vault') {

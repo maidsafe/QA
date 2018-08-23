@@ -49,5 +49,6 @@
       "concentratedRegion": 8,
       "size": ""
     }
-  }
+  },
+  "crustEncryptionKeysFile": "/tmp/crust_keys.json"
 }

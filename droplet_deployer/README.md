@@ -71,6 +71,14 @@ deployer parameters.
     }
   }
 ```
+* `crustEncryptionKeysFile` - make Crust write it's encryption keys to this
+  file. Then droplet deployer can take those case and use them for hard
+  coded contacts for the subsequent vaults.
+  Example:
+
+```json
+  "crustEncryptionKeysFile": "/tmp/crust_keys.json"
+```
 
 ## TODO
   At present the droplet list from digitalocean fetches maximum of 500 droplets only.

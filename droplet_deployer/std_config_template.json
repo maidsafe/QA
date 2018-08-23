@@ -3,9 +3,11 @@
   "whitelisted_node_ips": null,
   "whitelisted_client_ips": [],
   "tcp_acceptor_port": null,
+  "listen_addresses": ["tcp://0.0.0.0:", "utp://0.0.0.0:"],
   "service_discovery_port": null,
   "bootstrap_cache_name": null,
   "force_acceptor_port_in_ext_ep": false,
   "network_name": null,
+  "output_encryption_keys": null,
   "dev": null
 }
