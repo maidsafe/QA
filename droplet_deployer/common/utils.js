@@ -93,6 +93,14 @@ var Utils = function() {
     return ips;
   };
 
+  /**
+   * Dummy function to determine home directory for Linux user.
+   * Should work most of the time :D
+   */
+  self.unixHomeDir = function(username) {
+    return username == 'root' ? '/root' : '/home/' + username;
+  }
+
   return self;
 };
 

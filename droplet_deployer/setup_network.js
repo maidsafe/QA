@@ -105,6 +105,12 @@ exports = module.exports = function(args) {
     return requests;
   };
 
+  function scp(config, localFilePath, remotePath, targetIp, callback) {
+      var scpOptions = makeSSHOptions(targetIp, config);
+      scpOptions.path = remotePath;
+      scpClient.scp(localFilePath, scpOptions, callback);
+  }
+
   // Helper fn to populate hard_coded_contacts and whitelisted_node_ips for std config file
   var generateEndPoints = function(isSeedNodes, stdListeningPort) {
     var endPoints = [];
@@ -535,16 +541,18 @@ exports = module.exports = function(args) {
    * @param config {object} - droplet deployer config that also has Crust
    *    specific options. NOTE, that config is a public variable, but
    *    this is my attempt to reduce the use of public variables.
+   * @param hardCodedContacts {object}
    * @returns {object} Crust config filled with values from droplet deployer
    *    config.
    */
-  function genCrustConf(config) {
-    var conf = require('./std_config_template.json');
+  function genCrustConf(config, hardCodedContacts) {
+    let conf = JSON.parse(fs.readFileSync('./std_config_template.json', 'utf8'));
     let listenerPort = listeningPort | config.listeningPort;
     conf.listen_addresses = conf.listen_addresses.map(addr => addr + listenerPort);
     conf.output_encryption_keys = config.crustEncryptionKeysFile;
 
-    conf.hard_coded_contacts = generateEndPoints(true, listenerPort);
+    //conf.hard_coded_contacts = generateEndPoints(true, listenerPort);
+    conf.hard_coded_contacts = hardCodedContacts;
 
     if (isWhitelistedNetwork) {
       conf.whitelisted_node_ips = generateEndPoints();
@@ -556,10 +564,23 @@ exports = module.exports = function(args) {
     return conf;
   }
 
+  function localCrustConfPath(config) {
+    let prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig.example : selectedLibraryRepoName;
+    return config.outFolder + '/scp/' + prefix + '.crust.config';
+  }
+
+  /**
+   * Generate Crust config and store it on a disk.
+   *
+   * @param hardCodedContacts {object}
+   */
+  function genCrustConfFileSync(hardCodedContacts) {
+    let conf = genCrustConf(config, hardCodedContacts);
+    fs.writeFileSync(localCrustConfPath(config), JSON.stringify(conf, null, 2));
+  }
+
   function genCrustConfFile(callback) {
-    let conf = genCrustConf(config);
-    var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig.example : selectedLibraryRepoName;
-    fs.writeFileSync(config.outFolder + '/scp/' + prefix + '.crust.config', JSON.stringify(conf, null, 2));
+    genCrustConfFileSync([]);
     callback(null);
   }
 
@@ -666,6 +687,44 @@ exports = module.exports = function(args) {
     });
   };
 
+  /**
+   * SSH'es into machine running vault and reads Crust encryption keys
+   * written to a file.
+   * See config value `crustEncryptionKeysFile`.
+   *
+   * @param droplet_ip {string} - machine running vault whose public keys
+   *    we want to get.
+   * @keysFile {string}
+   */
+  function getCrustPublicKeys(dropletIp, keys_file, callback) {
+    let cmd = nodeUtil.format('cat %s', keys_file);
+    generateSSHRequests([dropletIp], cmd)[0]((err, data) => {
+      if (err) {
+        return callback(err, null);
+      }
+      let pubKeys = JSON.parse(data);
+      callback(null, pubKeys);
+    });
+  }
+
+  function waitForNodeToStart(node, grepCommand, callback) {
+    // Suppress waiting for grep messages when running crust examples
+    if (selectedLibraryKey.toLowerCase().indexOf('crust') > -1) {
+      return callback(null);
+    }
+    generateSSHRequests([ node ], grepCommand)[0](function(err, data) {
+      if (err) {
+        return callback(err);
+      }
+      if (!data) {
+        return setTimeout(function() {
+          waitForNodeToStart(node, grepCommand, callback);
+        }, 10000);
+      }
+      return callback(null);
+    });
+  }
+
   var startTmuxSession = function(callback) {
     var dropletIps = utils.getDropletIps(createdDroplets);
     var pattern = auth.getUserName() + '-' + selectedLibraryKey;
@@ -684,47 +743,40 @@ exports = module.exports = function(args) {
     var firstNodeGrepCommand = 'grep \"Started a new network as a seed node\" Node.log';
 
     var firstNodeIp = dropletIps.splice(0, 1)[0];
+    console.log('First node:', firstNodeIp);
     var firstNodeRequest = generateSSHRequests([ firstNodeIp ], tmuxFirstNodeCommands)[0];
-    var normalRequests = generateSSHRequests(dropletIps, tmuxOtherNodeCommands);
 
-    var WaitForNodeToStart = function(node, grepCommand) {
-      this.run = function(callback) {
-        // Suppress waiting for grep messages when running crust examples
-        if (selectedLibraryKey.toLowerCase().indexOf('crust') > -1) {
-          return callback(null);
-        }
-        generateSSHRequests([ node ], grepCommand)[0](function(err, data) {
+    /**
+     * After the first vault is started, start the next ones.
+     */
+    function startMoreVaults(prevVaultIp, dropletIps, hardCodedContacts) {
+      var serverIp = dropletIps.splice(0, 1)[0];
+      console.log('Starting another vault:', serverIp);
+
+      async.waterfall([
+        cb => getCrustPublicKeys(prevVaultIp, config.crustEncryptionKeysFile, cb),
+        (keys, cb) => {
+          // TODO(povilas): add option to choose uTP or TCP hard coded contacts
+          if (hardCodedContacts.length < seedNodeSize) {
+            hardCodedContacts.push({
+              'addr': nodeUtil.format('tcp://%s:%d', prevVaultIp, config.listeningPort),
+              'pub_key': keys,
+            });
+          }
+          genCrustConfFileSync(hardCodedContacts);
+          scp(config, localCrustConfPath(config), utils.unixHomeDir(config.dropletUser), serverIp, cb);
+        },
+        generateSSHRequests([serverIp], tmuxOtherNodeCommands)[0],
+      ], err => {
           if (err) {
             return callback(err);
           }
-          if (!data) {
-            return setTimeout(function() {
-              new WaitForNodeToStart(node, grepCommand)(callback);
-            }, 10000);
+          if (dropletIps.length === 0) {
+            return callback(null); // all droplets deployed
           }
-          return callback(null);
-        });
-      };
-
-      return this.run;
-    };
-
-    var onFirstSeedStarted = function(err) {
-      if (err) {
-        throw 'First seed node failed to start ' + err;
-      }
-
-      console.log('Started first Node.');
-      console.log('Starting remaining nodes in parallel');
-      async.parallelLimit(normalRequests, 20, function(err) {
-        if (!err) {
-          console.log('All droplet nodes started.\n');
-          return callback(null);
-        }
-        console.log('Failed starting remaining nodes.');
-        callback(err);
+          startMoreVaults(serverIp, dropletIps, hardCodedContacts);
       });
-    };
+    }
 
     console.log('Starting first Node.');
     firstNodeRequest(function(err) {
@@ -732,7 +784,13 @@ exports = module.exports = function(args) {
         console.log('First seed node failed to start');
         throw err;
       }
-      new WaitForNodeToStart(firstNodeIp, firstNodeGrepCommand)(onFirstSeedStarted);
+      waitForNodeToStart(firstNodeIp, firstNodeGrepCommand, err => {
+        if (err) {
+          throw 'First seed node failed to start ' + err;
+        }
+        console.log('Started first Node.');
+        startMoreVaults(firstNodeIp, dropletIps, []);
+      });
     });
   };
 
