@@ -61,6 +61,7 @@ if (!isPlatformSupported()) {
 
 process.on('uncaughtException', function(exception) {
   console.log('Unhandled Exception: ' + exception);
+  console.log(exception.stack);
 });
 
 console.log('Validating authentication...');
