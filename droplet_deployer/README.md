@@ -8,7 +8,8 @@ Linux only (DigitalOcean only supports Linux)
 
 ## Prerequisite
 
-[Nodejs](https://nodejs.org/en/download/) should be installed.
+[Nodejs](https://nodejs.org/en/download/) should be installed. The minimum
+version is `8.11.3`.
 
 Linux:
 
@@ -28,6 +29,7 @@ run `npm install`
 ## Usage
 
 `npm start` - Follow the default flow of the tool as listed [here](script_flow.md)
+`grunt  test` - Run lint checks.
 
 ## Configs
 
