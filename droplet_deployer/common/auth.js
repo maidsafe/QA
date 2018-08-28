@@ -28,6 +28,12 @@ var AuthManager = function() {
   };
 
   var cloneRepo = function(callback) {
+    // If we have specified SSH private key, we don't need credentials repo.
+    if ('dropletSshPrivKeyPath' in config) {
+      callback(null);
+      return;
+    }
+
     exec('git clone ' + config.auth_repo + ' ' + config.workspace + '/' +
       CLONED_REPO_NAME + ' --depth 1', function(err) {
       if (err) {

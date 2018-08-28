@@ -47,6 +47,30 @@ exports = module.exports = function(args) {
 
   var PROVIDER_DETAILS = config.providerDetails[config.provider];
 
+  /**
+   * A helper function to construct SSH options given target machine IP and
+   * config.
+   *
+   * @param {string} ip
+   * @param {object} config - droplet deployer config that also includes SSH
+   *    specific options, e.g. for authentication.
+   */
+  function makeSSHOptions(ip, config) {
+    var opts =  {
+      host: ip,
+      username: config.dropletUser,
+      readyTimeout: 99999
+    };
+
+    if ('dropletSshPrivKeyPath' in config) {
+      opts.privateKey = fs.readFileSync(config.dropletSshPrivKeyPath);
+    } else {
+      opts.password = auth.getDropletUserPassword();
+    }
+
+    return opts;
+  }
+
   // Helper fn to populate ssh requests to multiple ips
   var generateSSHRequests = function(ips, cmd) {
     var Handler = function(sshOptions) {
@@ -76,13 +100,7 @@ exports = module.exports = function(args) {
     };
     var requests = [];
     ips.forEach(function(ip) {
-      var sshOptions = {
-        host: ip,
-        username: config.dropletUser,
-        password: auth.getDropletUserPassword(),
-        readyTimeout: 99999
-      };
-      requests.push(new Handler(sshOptions));
+      requests.push(new Handler(makeSSHOptions(ip, config)));
     });
     return requests;
   };
@@ -444,6 +462,33 @@ exports = module.exports = function(args) {
     setTimeout(getDropletsInfo, 5 * 1000);
   };
 
+  /**
+   * Installs required packages into the droplets.
+   */
+  function setupDroplets(callback) {
+    if (!PROVIDER_DETAILS.freshInstall) {
+      return callback();
+    }
+
+    var sshCommand = 'sudo apt-get update && ' +
+        'sudo apt-get install -y ruby && ' +
+        'sudo gem install teamocil && ' +
+        'mkdir -p ~/.teamocil &&' +
+        'touch ~/.bash_profile';
+    let requests = createdDroplets.map(droplet => generateSSHRequests(
+      [droplet.networks.v4[0].ip_address], sshCommand)[0]);
+
+    console.log('Installing packages into droplets...');
+    async.parallelLimit(requests, 20, err => {
+      if (!err) {
+        console.log('Packages installed successfully.\n');
+        return callback(null);
+      }
+
+      return callback(err);
+    });
+  }
+
   var SetHostnames = function(callback) {
     if (isUsingExistingDroplets || config.provider !== 'vultr') {
       return callback();
@@ -592,13 +637,8 @@ exports = module.exports = function(args) {
       }
 
       console.log('Transferring new files');
-      var scpOptions = {
-        host: config.dropletFileHost,
-        username: config.dropletUser,
-        password: auth.getDropletUserPassword(),
-        path: nodeUtil.format('/var/www/html/%s/', pattern),
-        readyTimeout: 99999
-      };
+      var scpOptions = makeSSHOptions(config.dropletFileHost, config);
+      scpOptions.path = nodeUtil.format('/var/www/html/%s/', pattern);
       scpClient.scp(config.outFolder + '/scp/', scpOptions, function(err) {
         if (!err) {
           console.log('File transfer completed successfully.\n');
@@ -748,6 +788,7 @@ exports = module.exports = function(args) {
         getNetworkType,
         createDroplets,
         getDroplets,
+        setupDroplets,
         SetHostnames,
         clearOutputFolder,
         generateIPListFile,
