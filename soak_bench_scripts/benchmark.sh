@@ -1,31 +1,36 @@
 #!/bin/bash
-#set -e
+# set -e
 
 date
 
 # This code is obsolete but leaving just in case there is a need for graphs again
 # Remove old graphs
-#find /tmp/parsec_graphs -maxdepth 1 -type d -ctime 1 -exec rm -r "{}" \;
+# Find /tmp/parsec_graphs -maxdepth 1 -type d -ctime 1 -exec rm -r "{}" \;
 
+# Declare timestamped logfile for day's tests
+LOGFILE="/home/maidsafe/Projects/benchmarks/parsec/logs/log$(date -d "today" +"%Y%m%d%H%M").log"
+
+# Navigate to folder, checkout master, pull to ensure up to date, output commit info to logfile
 cd /home/maidsafe/Projects/benchmarks/parsec
 git checkout master
 git pull
-git log -1 --oneline
+git log -1 --oneline | tee $LOGFILE
+
 /home/maidsafe/.cargo/bin/cargo update
 
-# Pause the soak tests
+# Pause the parsec soak tests
 INTEGRATION_TESTS_PID=$(pgrep integration_)
 printf "Pausing soak tests with PID %i\n\n" $INTEGRATION_TESTS_PID
 kill -TSTP $INTEGRATION_TESTS_PID
 
 # Run the benchmark tests and output log to timestamped file in /logs directory
-LOGFILE="/home/maidsafe/Projects/benchmarks/parsec/logs/log$(date -d "today" +"%Y%m%d%H%M").log" 
-/home/maidsafe/.cargo/bin/cargo bench --features=testing | tee $LOGFILE
+
+/home/maidsafe/.cargo/bin/cargo bench --features=testing | tee -a $LOGFILE
 
 # Feedback
 printf "Benchmark testing complete.\n"
 
-# Restart the soak tests
+# Restart the parsec soak tests
 printf "Resuming soak tests with PID %i\n" $INTEGRATION_TESTS_PID
 kill -CONT $INTEGRATION_TESTS_PID
 

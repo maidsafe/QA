@@ -1,7 +1,8 @@
-#!/bin/bash
+#!/usr/local/bin/bash
+echo $BASH_VERSION
 
 # Declare folder variables
-ROOT_FOLDER="home/maidsafe/Projects/soak"
+ROOT_FOLDER="/Users/qamaidsafe/Projects/soak"
 LOG_FOLDER="$ROOT_FOLDER/logs"
 
 # Create log_folder if doesn't exist
@@ -38,4 +39,10 @@ rm target/release/integration_tests-*.d
 printf "Starting soak tests...\n"
 
 # Loop the test forever until it hits an error
-loop -q target/release/integration_tests-* |& tee -a -i -p --output-error=warn $LOGFILE
+os=$(uname)
+echo $os |& tee $LOGFILE
+if [[ $os == "Darwin" ]]; then
+	loop -q target/release/integration_tests-* |& tee -a -i $LOGFILE
+else
+	loop -q target/release/integration_tests-* |& tee -a -i -p --output-error=warn $LOGFILE
+fi
