@@ -4,16 +4,59 @@ We don't maintain a separate style guide but in general try to follow [common go
 
 ## Rust version
 
-We currently use Rust stable 1.28.0.
+We currently always use the latest Rust stable toolchain. Please install it using `rustup`:
+
+https://www.rust-lang.org/tools/install
+
+To update stable:
+
+```
+rustup update stable
+```
+
+## Rustfmt
+
+Apply Rustfmt to new code before committing, using the default configuration or, if present, the repository's `rustfmt.toml` file. We run Rustfmt on the stable toolchain.
+
+To install Rustfmt:
+
+```
+rustup component add rustfmt
+```
+
+To run Rustfmt:
+
+```
+cargo fmt
+```
+
+## Clippy
+
+Crates are tested using cargo-clippy; make sure your code does not produce any new errors when running Clippy. If you don't agree with a [Clippy lint](https://github.com/Manishearth/rust-clippy#lints), discuss it with the team before explicitly adding a `#[allow(clippy::<lint>)]` attribute. We run Clippy on the stable toolchain.
+
+To install Clippy:
+
+```
+rustup component add clippy
+```
+
+To run Clippy:
+
+```
+cargo clippy
+cargo clippy --all-targets
+```
+
+If the crate being tested also defines features, these two Clippy commands should also be run with each feature enabled.
 
 ## Unwrap
 
 Don't unwrap [`Option`](https://doc.rust-lang.org/std/option/enum.Option.html)s or [`Result`](https://doc.rust-lang.org/std/result/enum.Result.html)s, except possibly when:
 
 1. locking a mutex,
-2. spawning a thread,
-3. joining a thread,
-4. writing tests or examples
+1. spawning a thread,
+1. joining a thread,
+1. writing tests or examples
 
 or in other patterns where using them makes the code _much simpler_ and it is _obvious at first glance_ to the reader (even one unfamiliar with the code) that the value cannot be `None`/`Err`.
 
@@ -27,10 +70,6 @@ This can easily be achieved by preferring to create child threads using [`maidsa
 
 * it returns a [`Joiner`](http://docs.maidsafe.net/maidsafe_utilities/master/maidsafe_utilities/thread/struct.Joiner.html) which helps to avoid detached threads
 * it requires that the child thread is given a name
-
-## Rustfmt
-
-Apply `rustfmt` to new code before committing, using the default configuration or, if present, the repository's `rustfmt.toml` file. We currently use [rustfmt-nightly](https://crates.io/crates/rustfmt-nightly) 0.99.2.
 
 ## Function ordering
 
@@ -60,23 +99,6 @@ Requiring functions to be module-qualified allows generically-named functions to
 This policy on imports applies to all repositories apart from safe_client_libs, where functions are also fully brought into scope. This is because the safe_client_libs workspace has many instances of functions which if partially qualified would make the code unnecessarily verbose.
 
 We also have an exception for all repositories using the [serialisation functions](https://docs.rs/maidsafe_utilities/0.15.0/maidsafe_utilities/serialisation/index.html) from maidsafe_utilities. These should always be fully brought into scope, since qualifying any of these with `serialisation::` only increases verbosity without any gain in clarity.
-
-## Clippy
-
-Crates are tested using cargo-clippy; make sure your code does not produce any new errors when running Clippy. If you don't agree with a [Clippy lint](https://github.com/Manishearth/rust-clippy#lints), discuss it with the team before explicitly adding a `#[cfg_attr(feature="cargo-clippy", allow(<lint>))]` attribute.
-
-We currently use Clippy 0.0.212 which needs to be installed and run with Rust nightly-2018-07-07:
-```
-rustup install nightly-2018-07-07
-cargo +nightly-2018-07-07 install clippy -f --vers=0.0.212
-```
-
-To run Clippy:
-```
-cargo +nightly-2018-07-07 clippy
-cargo +nightly-2018-07-07 clippy --profile test
-```
-If the crate being tested also defines features, these two Clippy commands should also be run with each feature enabled.
 
 ## Cargo
 

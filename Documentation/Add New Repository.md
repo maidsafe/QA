@@ -70,7 +70,6 @@ http://visualiser.maidsafe.net/cgi-bin/highfive/newpr.py
 
 ![Manage webhook](Images/08.png)
 
-
 ### Highfive Backend Configuration
 
 SSH (details in private assets GitHub repository) to the droplet hosting Highfive
@@ -113,7 +112,6 @@ Above is a screenshot and below is a template, best take the markdown from anoth
 
 [![](https://img.shields.io/badge/Project%20SAFE-Approved-green.svg)](http://maidsafe.net/applications) [![](https://img.shields.io/badge/License-GPL3-green.svg)](https://github.com/maidsafe/crust/blob/master/COPYING)
 
-
 Reliable peer-to-peer network connections in Rust with NAT traversal.
 
 |Crate|Linux/OS X|Windows|Coverage|Issues|
@@ -123,10 +121,12 @@ Reliable peer-to-peer network connections in Rust with NAT traversal.
 |[API Documentation - master branch](http://maidsafe.net/crust/master)|[SAFE Network System Documentation](http://systemdocs.maidsafe.net)|[MaidSafe website](http://maidsafe.net)| [SAFE Network Forum](https://forum.safenetwork.io)|
 |:------:|:-------:|:-------:|:-------:|
 
-
 ## Overview
+
 < insert_overview >
+
 ## Todo Items
+
 < insert_todo_items >
 
 *In the above example the badges and links are for `crust` just for illustrative purposes*
@@ -165,7 +165,7 @@ Once everything is complete, we need to revoke elevated privileges and reduce th
 
 *Ensure `Owners` have "Admin" privileges and `Bots` and `Developers` have "Write" privileges.*
 
-### Checklist to see if everything is ok:
+### Checklist to see if everything is ok
 
 * Did Travis run?
 * Did AppVeyor run?
