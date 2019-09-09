@@ -40,7 +40,7 @@
   "provider": "digitalOcean",
   "providerDetails": {
     "digitalOcean": {
-      "snapshotId": "33346667",
+      "snapshotId": "52015304",
       "concentratedRegion": "lon1",
       "size": "s-1vcpu-2gb"
     },
