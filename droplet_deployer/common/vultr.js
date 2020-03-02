@@ -76,7 +76,6 @@ var Api = function(token, testMode) {
   };
 
   this.getImage = function(id, callback) {
-    this.getAvaliableRegions(function(err, regions) {
       callback(null, {image: {regions: regions}});
     });
   };

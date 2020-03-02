@@ -59,7 +59,7 @@ if (!isPlatformSupported()) {
   return;
 }
 
-process.on('uncaughtException', function (exception) {
+process.on('uncaughtException', function(exception) {
   console.log('Unhandled Exception: ' + exception);
 });
 

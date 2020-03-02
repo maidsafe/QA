@@ -9,7 +9,7 @@ var AuthManager = function() {
   var async = require('async');
   var exec = require('child_process').exec;
   var config = require('../config.json');
-  var CLONED_REPO_NAME = 'qa_repo';
+  var CLONED_REPO_NAME = 'assets_repo';
   var TOKEN_KEY = 'digitalOceanToken';
   var PASSWORD_KEY = 'dropletUserPassword';
 
@@ -28,13 +28,19 @@ var AuthManager = function() {
   };
 
   var cloneRepo = function(callback) {
+    // If we have specified SSH private key, we don't need credentials repo.
+    if ('dropletSshPrivKeyPath' in config) {
+      callback(null);
+      return;
+    }
+
     exec('git clone ' + config.auth_repo + ' ' + config.workspace + '/' +
       CLONED_REPO_NAME + ' --depth 1', function(err) {
       if (err) {
         callback(err);
         return;
       }
-      credentials = require('../' + config.workspace + '/' + CLONED_REPO_NAME + '/droplets/credentials');
+      credentials = require('../' + config.workspace + '/' + CLONED_REPO_NAME + '/QA/credentials');
       callback(null);
     });
   };

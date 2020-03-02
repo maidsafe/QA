@@ -1,5 +1,5 @@
 {
-  "auth_repo": "git@github.com:maidsafe/release_config.git",
+  "auth_repo": "git@github.com:maidsafe/Assets.git",
   "platforms": ["linux"],
   "workspace": "temp_job",
   "outFolder": "output",
@@ -40,7 +40,7 @@
   "provider": "digitalOcean",
   "providerDetails": {
     "digitalOcean": {
-      "snapshotId": "33346667",
+      "snapshotId": "52015304",
       "concentratedRegion": "lon1",
       "size": "s-1vcpu-2gb"
     },

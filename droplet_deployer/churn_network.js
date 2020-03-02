@@ -16,9 +16,9 @@ exports = module.exports = function() {
     upperBound: 0
   };
   var stageOptions = {
-    NORMAL : "Regular Churn",
-    MERGES : "Get to Network Size < 50% Nodes",
-    SPLITS : "Get to Network Size == 100% Nodes"
+    NORMAL: 'Regular Churn',
+    MERGES: 'Get to Network Size < 50% Nodes',
+    SPLITS: 'Get to Network Size == 100% Nodes'
   };
   var stages = [
     stageOptions.SPLITS,
@@ -55,7 +55,9 @@ exports = module.exports = function() {
       return this.run;
     };
     var sshOptions = {
+      /*jshint camelcase: false */
       host: droplet.networks.v4[0].ip_address,
+      /*jshint camelcase: true */
       username: config.dropletUser,
       password: auth.getDropletUserPassword(),
       readyTimeout: 99999
@@ -148,7 +150,7 @@ exports = module.exports = function() {
     var indexes = [];
     while (indexes.length < churnIntensity) {
       var index = Math.floor(Math.random() * maxIndex);
-      if(indexes.indexOf(index) > -1) {
+      if (indexes.indexOf(index) > -1) {
         continue;
       }
       indexes[indexes.length] = index;
@@ -165,7 +167,7 @@ exports = module.exports = function() {
     return this.run;
   };
 
-  var calculateNetworkState = function (droplets, isConnected, callback) {
+  var calculateNetworkState = function(droplets, isConnected, callback) {
     var tasks = [];
     for (var i in droplets) {
       if (droplets[i]) {
@@ -189,7 +191,7 @@ exports = module.exports = function() {
     });
   };
 
-  var ToggleNode = function (droplet, stageOption) {
+  var ToggleNode = function(droplet, stageOption) {
     var getNodeIndexFromName = function(name) {
       return name.split(/[- ]+/).pop();
     };
@@ -200,7 +202,9 @@ exports = module.exports = function() {
       var nodeIndex = getNodeIndexFromName(droplet.name);
       executeCommandOnDroplet(droplet, cmd, function(err) {
         if (err) {
+          /*jshint camelcase: false */
           console.log('Failed to start: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
+          /*jshint camelcase: true */
           throw err;
         }
 
@@ -215,7 +219,9 @@ exports = module.exports = function() {
       var nodeIndex = getNodeIndexFromName(droplet.name);
       executeCommandOnDroplet(droplet, cmd, function(killErr) {
         if (killErr) {
+          /*jshint camelcase: false */
           console.log('Failed to stop: Node %s - %s', nodeIndex, droplet.networks.v4[0].ip_address);
+          /*jshint camelcase: true */
           throw killErr;
         }
 
@@ -226,22 +232,22 @@ exports = module.exports = function() {
     };
 
     this.run = function(callback) {
-      executeCommandOnDroplet(droplet, grepIsNodeConnected, function (isNodeConnectedErr) {
+      executeCommandOnDroplet(droplet, grepIsNodeConnected, function(isNodeConnectedErr) {
         if (isNodeConnectedErr) {
-          return executeCommandOnDroplet(droplet, grepIsNodeStarted, function (isNodeStartedErr) {
-            if (isNodeStartedErr && stageOption != stageOptions.MERGES) {
+          return executeCommandOnDroplet(droplet, grepIsNodeStarted, function(isNodeStartedErr) {
+            if (isNodeStartedErr && stageOption !== stageOptions.MERGES) {
               return startNode(callback);
             } else if (isNodeStartedErr) {
               console.log('Ignore - Node %s - already stopped', getNodeIndexFromName(droplet.name));
-            } else if (stageOption == stageOptions.NORMAL) {
+            } else if (stageOption === stageOptions.NORMAL) {
               console.log('Ignore - Node %s - waiting to connect', getNodeIndexFromName(droplet.name));
-            } else if (stageOption == stageOptions.MERGES) {
+            } else if (stageOption === stageOptions.MERGES) {
               return stopNode(callback);
             }
 
             return callback(null);
           });
-        } else if (stageOption != stageOptions.SPLITS) {
+        } else if (stageOption !== stageOptions.SPLITS) {
           return stopNode(callback);
         }
 
@@ -251,12 +257,12 @@ exports = module.exports = function() {
     return this.run;
   };
 
-  var RunNormalChurn = function (dropletsToChurn, count) {
+  var RunNormalChurn = function(dropletsToChurn, count) {
     this.run = function(callback) {
       console.log('Churn Iteration: %s', count);
       var indexes = getRandomIndexes(dropletsToChurn.length);
       var tasks = [];
-      indexes.forEach(function (index) {
+      indexes.forEach(function(index) {
         tasks.push(new ToggleNode(dropletsToChurn[index], stageOptions.NORMAL));
       });
 
@@ -267,10 +273,10 @@ exports = module.exports = function() {
     return this.run;
   };
 
-  var RunMergeChurn = function (dropletsToChurn, callback) {
+  var RunMergeChurn = function(dropletsToChurn, callback) {
     var indexes = getRandomIndexes(dropletsToChurn.length);
     var tasks = [];
-    indexes.forEach(function (index) {
+    indexes.forEach(function(index) {
       tasks.push(new ToggleNode(dropletsToChurn[index], stageOptions.MERGES));
     });
 
@@ -279,9 +285,9 @@ exports = module.exports = function() {
     });
   };
 
-  var RunStartAllNodes = function (dropletsToChurn, callback) {
+  var RunStartAllNodes = function(dropletsToChurn, callback) {
     var tasks = [];
-    dropletsToChurn.forEach(function (droplet) {
+    dropletsToChurn.forEach(function(droplet) {
       tasks.push(new ToggleNode(droplet, stageOptions.SPLITS));
     });
 
@@ -292,14 +298,15 @@ exports = module.exports = function() {
 
   var startChurning = function() {
     var currentStage = -1;
-    var dropletsToChurn = droplets.slice(0, nonChurnNodeBounds.lowerBound - 1).concat(droplets.slice(nonChurnNodeBounds.upperBound));
+    var dropletsToChurn = droplets.slice(0, nonChurnNodeBounds.lowerBound - 1)
+                                  .concat(droplets.slice(nonChurnNodeBounds.upperBound));
 
     var nextStage = function() {
-      if (currentStage != -1) {
+      if (currentStage !== -1) {
         console.log('Stage Completed: %s\nTotal Churn Events: %s\t\tStarted: %s\tStopped: %s',
           stages[ currentStage ], nodesStartedCount + nodesStoppedCount, nodesStartedCount, nodesStoppedCount);
       }
-      currentStage = (currentStage == stages.length - 1) ? 0 : currentStage + 1;
+      currentStage = (currentStage === stages.length - 1) ? 0 : currentStage + 1;
       console.log('\nStarting Stage: ' + stages[currentStage]);
     };
 
@@ -316,15 +323,15 @@ exports = module.exports = function() {
     };
 
     var churn = function() {
-      if (stages[currentStage] == stageOptions.SPLITS) {
-        return calculateNetworkState(droplets, true, function (connectedNodesCount) {
+      if (stages[currentStage] === stageOptions.SPLITS) {
+        return calculateNetworkState(droplets, true, function(connectedNodesCount) {
           console.log('Connected Nodes: %s', connectedNodesCount);
-          if (connectedNodesCount == droplets.length) {
+          if (connectedNodesCount === droplets.length) {
             nextStage();
             return setTimeout(churn, churnFrequency);
           }
 
-          new RunStartAllNodes(droplets, function () {
+          new RunStartAllNodes(droplets, function() {
             var splitCycleTimeout = 75;
             console.log('Waiting %s seconds...', splitCycleTimeout);
             return setTimeout(churn, splitCycleTimeout * 1000);
@@ -332,8 +339,8 @@ exports = module.exports = function() {
         });
       }
 
-      if (stages[currentStage] == stageOptions.MERGES) {
-        return calculateNetworkState(droplets, false, function (startedNodesCount) {
+      if (stages[currentStage] === stageOptions.MERGES) {
+        return calculateNetworkState(droplets, false, function(startedNodesCount) {
           console.log('Running Nodes: %s', startedNodesCount);
           if (startedNodesCount < droplets.length / 2) {
             nextStage();
@@ -352,8 +359,8 @@ exports = module.exports = function() {
     };
 
     // Startup condition
-    if (currentStage == -1) {
-      calculateNetworkState(droplets, true, function (connectedNodesCount) {
+    if (currentStage === -1) {
+      calculateNetworkState(droplets, true, function(connectedNodesCount) {
         console.log('Current Network Size: %s', connectedNodesCount);
         nextStage();
         churn();
