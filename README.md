@@ -61,3 +61,11 @@ These repositories have all been deprecated and are no longer actively maintaine
 | [config_file_handler](https://github.com/maidsafe/config_file_handler) | [![Documentation](https://docs.rs/config_file_handler/badge.svg)](https://docs.rs/config_file_handler) | [![](http://meritbadge.herokuapp.com/config_file_handler)](https://crates.io/crates/config_file_handler) |
 | [crust](https://github.com/maidsafe/crust) | [![Documentation](https://docs.rs/crust/badge.svg)](https://docs.rs/crust) | [![](http://meritbadge.herokuapp.com/crust)](https://crates.io/crates/crust) |
 | [get_if_addrs](https://github.com/maidsafe/get_if_addrs) | [![Documentation](https://docs.rs/get_if_addrs/badge.svg)](https://docs.rs/get_if_addrs) | [![](http://meritbadge.herokuapp.com/get_if_addrs)](https://crates.io/crates/get_if_addrs) |
+
+## Contributing
+
+Want to contribute? Great :tada:
+
+There are many ways to give back to the project, whether it be writing new code, fixing bugs, or just reporting errors. All forms of contributions are encouraged!
+
+For instructions on how to contribute, see our [Guide to contributing](CONTRIBUTING.md).
