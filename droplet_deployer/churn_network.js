@@ -5,7 +5,9 @@ exports = module.exports = function() {
   var config = require('./config.json');
   var auth = require('./common/auth');
   var SshClient = require('ssh2').Client;
-  var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken(), config.testMode);
+  var cloudProvider =  config.provider === 'vultr' ?
+    require('./common/vultr').Api(auth.getVultrToken()) :
+    require('./common/digitalocean').Api(auth.getDigitalOceanToken());
 
   var selectedLibraryKey;
   var droplets = [];
@@ -67,7 +69,7 @@ exports = module.exports = function() {
   };
 
   var getDroplets = function(callback) {
-    digitalOcean.getDropletList(function(err, list) {
+    cloudProvider.getDropletList(function(err, list) {
       if (err) {
         callback(err);
         return;
@@ -90,7 +92,7 @@ exports = module.exports = function() {
   var getNonChurnNodes = function(callback) {
     var invalidRange = function() {
       console.log('Enter a valid input');
-      getNonChurnNodes();
+      getNonChurnNodes(callback);
     };
     var onUserInput = function(range) {
       if (!range) {
@@ -193,7 +195,8 @@ exports = module.exports = function() {
     };
 
     var startNode = function(cb) {
-      var cmd = 'tmux new-session -d \". ~/.bash_profile;teamocil settings\"';
+      var cmd = nodeUtil.format('tmux new-session -d \"%s teamocil settings\"',
+                                config.provider !== 'vultr' ? '. ~/.bash_profile;' : '');
       var nodeIndex = getNodeIndexFromName(droplet.name);
       executeCommandOnDroplet(droplet, cmd, function(err) {
         if (err) {

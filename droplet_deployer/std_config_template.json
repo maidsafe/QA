@@ -1,8 +1,11 @@
 {
   "hard_coded_contacts": [],
-  "bootstrap_whitelisted_ips": [],
+  "whitelisted_node_ips": null,
+  "whitelisted_client_ips": [],
   "tcp_acceptor_port": null,
   "service_discovery_port": null,
   "bootstrap_cache_name": null,
-  "network_name": null
+  "force_acceptor_port_in_ext_ep": false,
+  "network_name": null,
+  "dev": null
 }

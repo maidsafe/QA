@@ -16,7 +16,9 @@ exports = module.exports = function(args) {
   var SshClient = require('ssh2').Client;
   var ProgressBar = require('progress');
   var Table = require('cli-table');
-  var digitalOcean = require('./common/digitalocean').Api(auth.getDigitalOceanToken(), config.testMode);
+  var cloudProvider =  config.provider === 'vultr' ?
+      require('./common/vultr').Api(auth.getVultrToken()) :
+      require('./common/digitalocean').Api(auth.getDigitalOceanToken());
 
   var ADVANCED_ARG = 'advanced';
 
@@ -36,11 +38,14 @@ exports = module.exports = function(args) {
   var snapshotRegions;
   var isWhitelistedNetwork;
   var networkName;
+  var inviteKey;
 
   var BINARY_EXT = {
     'windows_nt': '.exe',
     'linux': ''
   }[os.type().toLowerCase()];
+
+  var PROVIDER_DETAILS = config.providerDetails[config.provider];
 
   // Helper fn to populate ssh requests to multiple ips
   var generateSSHRequests = function(ips, cmd) {
@@ -82,7 +87,7 @@ exports = module.exports = function(args) {
     return requests;
   };
 
-  // Helper fn to populate hard_coded_contacts and bootstrap_whitelisted_ips for std config file
+  // Helper fn to populate hard_coded_contacts and whitelisted_node_ips for std config file
   var generateEndPoints = function(isSeedNodes, stdListeningPort) {
     var endPoints = [];
     var ip;
@@ -101,7 +106,7 @@ exports = module.exports = function(args) {
   };
 
   var validateUniqueNetwork = function(callback) {
-    digitalOcean.getDropletList(function(err, list) {
+    cloudProvider.getDropletList(function(err, list) {
       if (err) {
         callback(err);
         return;
@@ -114,6 +119,7 @@ exports = module.exports = function(args) {
           existingDroplets.push(list[i]);
         }
       }
+      
       isUsingExistingDroplets = existingDroplets.length > 0;
       if (!isUsingExistingDroplets) {
         return callback();
@@ -315,6 +321,16 @@ exports = module.exports = function(args) {
     }, true);
   };
 
+  var getInviteKey = function(callback) {
+    var message = '\nPlease provide the vault invite token pub key. (default: null)';
+    utils.postQuestion(message, function(key) {
+      if (key) {
+        inviteKey = JSON.parse(key);
+      }
+      callback(null);
+    }, true);
+  };
+
   var getNetworkType = function(callback) {
     if (isUsingExistingDroplets) {
       return callback(null, true);
@@ -335,25 +351,27 @@ exports = module.exports = function(args) {
     if (isUsingExistingDroplets) {
       return callback(null, []);
     }
+
+    if (isConcentratedNetwork && snapshotRegions.indexOf(PROVIDER_DETAILS.concentratedRegion) < 0) {
+      return callback('Region: %s, not found to create concentrated network.', PROVIDER_DETAILS.concentratedRegion);
+    }
+
     var name;
     var region;
     var TempFunc = function(name, region, size, image, keys) {
       this.run = function(cb) {
         console.log('Creating droplet -', name);
-        digitalOcean.createDroplet(name, region, size, image, keys, cb);
+        cloudProvider.createDroplet(name, region, size, image, keys, cb);
       };
       return this.run;
     };
+
     var requests = [];
     console.log('Creating droplets...');
     for (var i = 0; i < networkSize; i++) {
-      if (snapshotRegions.indexOf(config.concentratedRegion) < 0) {
-        return callback('%s region not found for given snapshot to create concentrated network.',
-                        config.concentratedRegion);
-      }
-      region = isConcentratedNetwork ? config.concentratedRegion : snapshotRegions[i % snapshotRegions.length];
+      region = isConcentratedNetwork ? PROVIDER_DETAILS.concentratedRegion : snapshotRegions[i % snapshotRegions.length];
       name = auth.getUserName() + '-' + selectedLibraryKey + '-TN-' + region + '-' + (i + 1);
-      requests.push(new TempFunc(name, region, config.dropletSize, config.imageId, config.sshKeys));
+      requests.push(new TempFunc(name, region, PROVIDER_DETAILS.size, PROVIDER_DETAILS.snapshotId, config.sshKeys));
     }
     async.series(requests, callback);
   };
@@ -363,7 +381,13 @@ exports = module.exports = function(args) {
     var initialised;
     for (var i in list) {
       if (list[i]) {
-        initialised = list[i].status === 'active';
+        if (config.provider === 'vultr') {
+          initialised = list[ i ].status === 'active' &&
+            list[ i ].power_status === 'running' &&
+            list[ i ].server_state === 'ok';
+        } else {
+          initialised = list[ i ].status === 'active';
+        }
         if (initialised) {
           initialisedCount += 1;
         }
@@ -387,42 +411,61 @@ exports = module.exports = function(args) {
       progressBar.tick(0);
     }
 
-    var TempFunc = function(id) {
-      this.run = function(cb) {
-        digitalOcean.getDroplet(id, cb);
-      };
-      return this.run;
-    };
-
-    var getDropletInfo = function() {
-      var requests = [];
-      for (var i in idList) {
-        if (idList[i]) {
-          requests.push(new TempFunc(idList[i]));
-        }
-      }
-      async.parallelLimit(requests, 20, function(err, droplets) {
+    var getDropletsInfo = function() {
+      cloudProvider.getDropletList(function(err, list) {
         if (err) {
-          callback(err);
-          return;
+          return callback(err);
         }
-        createdDroplets = droplets;
-        var activeDropletCount = getActiveDropletCount(createdDroplets);
+        var userName = auth.getUserName();
+        var pattern = userName + '-' + selectedLibraryKey;
+        var selectedDroplets = [];
+        for (var i in list) {
+          if (list[i].name.indexOf(pattern) === 0) {
+            selectedDroplets.push(list[i]);
+          }
+        }
+
+        var activeDropletCount = getActiveDropletCount(selectedDroplets);
         var newActiveCount = activeDropletCount - progressBar.curr;
         if (newActiveCount > 0) {
           progressBar.tick(newActiveCount);
         }
-        if (createdDroplets.length === 0) {
-          callback('Droplets could not be created');
+        if (selectedDroplets.length === 0) {
+          return callback('Droplets could not be created');
         } else if (activeDropletCount < networkSize) {
           getDroplets(idList, callback);
         } else {
           console.log('\n');
-          callback(null);
+          createdDroplets = selectedDroplets;
+          return callback(null);
         }
       });
     };
-    setTimeout(getDropletInfo, 60 * 1000);
+    setTimeout(getDropletsInfo, 5 * 1000);
+  };
+
+  var SetHostnames = function(callback) {
+    if (isUsingExistingDroplets || config.provider !== 'vultr') {
+      return callback();
+    }
+
+    var requests = [];
+    for (var i in createdDroplets) {
+      if (createdDroplets[i]) {
+        var sshCommand = nodeUtil.format('sudo /sbin/update_hostname %s', createdDroplets[i].name);
+        requests.push(generateSSHRequests([createdDroplets[i].networks.v4[0].ip_address], sshCommand)[0]);
+      }
+    }
+
+    console.log('Updating hostnames...');
+    async.parallelLimit(requests, 20, function(err) {
+      if (!err) {
+        console.log('Hostnames updated successfully.\n');
+        return callback(null);
+      }
+
+      return callback(err);
+    });
   };
 
   var clearOutputFolder = function(callback) {
@@ -450,9 +493,9 @@ exports = module.exports = function(args) {
     configFile.tcp_acceptor_port = stdListeningPort;
     configFile.hard_coded_contacts = generateEndPoints(true, stdListeningPort);
     if (isWhitelistedNetwork) {
-      configFile.bootstrap_whitelisted_ips = generateEndPoints();
+      configFile.whitelisted_node_ips = generateEndPoints();
     } else {
-      configFile.bootstrap_whitelisted_ips = [];
+      configFile.whitelisted_node_ips = null;
     }
     configFile.network_name = networkName;
     var prefix = libraryConfig.hasOwnProperty('example') ? libraryConfig.example : selectedLibraryRepoName;
@@ -461,7 +504,12 @@ exports = module.exports = function(args) {
   };
 
   var generateVaultConfigFile = function(callback) {
-    fse.copySync('./vault_config_template.json', config.outFolder + '/scp/safe_vault.vault.config');
+    var configFile;
+    configFile = require('./vault_config_template.json');
+    if (inviteKey) {
+      configFile.invite_key = inviteKey;
+    }
+    fs.writeFileSync(config.outFolder + '/scp/safe_vault.vault.config', JSON.stringify(configFile, null, 2));
     callback(null);
   };
 
@@ -483,6 +531,13 @@ exports = module.exports = function(args) {
     }
     callback(null);
   };
+
+  // Stephen's additions for mem-check
+  var generateMemCheckFile = function(callback) {
+    fse.copySync('./mem-check_template.sh', config.outFolder + '/scp/mem-check.sh');
+    callback(null);
+  };
+  // Stephen's additions for mem-check
 
   var generateTeamocilSettingsFiles = function(callback) {
     var TMUX_CMD_KEY = 'tmuxCommand';
@@ -570,9 +625,13 @@ exports = module.exports = function(args) {
     var otherNodeOnlyCommand = 'rm ~/IS_FIRST_NODE; ';
     var normalNodeCommands = nodeUtil.format('wget -r -nH -nd -np -R index.html* http://%s/%s/ && ',
       config.dropletFileHost, pattern);
+    var memCheck = 'mem-check.sh'; // stephen
+    normalNodeCommands += nodeUtil.format('chmod +x %s && ', memCheck);  // stephen
+    //normalNodeCommands += nodeUtil.format('(crontab -l 2>/dev/null; echo "*/1 * * * * /home/qa/mem-check") | crontab -');  // stephen
+    console.log('mem-check setup completed'); // stephen
     normalNodeCommands += nodeUtil.format('chmod +x %s && ', binaryName);
     normalNodeCommands += 'mv ~/settings.yml ~/.teamocil/ && ';
-    normalNodeCommands += '. ~/.bash_profile && ';
+    normalNodeCommands += (config.provider !== 'vultr' ? '. ~/.bash_profile && ' : '');
     normalNodeCommands += 'teamocil settings';
     var tmuxBaseCommand = 'tmux new-session -d \"%s\"';
     var tmuxFirstNodeCommands = nodeUtil.format(tmuxBaseCommand, firstNodeOnlyCommand + normalNodeCommands);
@@ -630,8 +689,23 @@ exports = module.exports = function(args) {
         throw err;
       }
       new WaitForNodeToStart(firstNodeIp, firstNodeGrepCommand)(onFirstSeedStarted);
+      //normalNodeCommands += nodeUtil.format('(crontab -l 2>/dev/null; echo "*/1 * * * * /home/qa/mem-check") | crontab -');  // stephen
+      normalNodeCommands += nodeUtil.format('echo -e "$(sudo crontab -u root -l)\n*/1 * * * * /home/qa/mem-check" | sudo crontab -u root -');  // stephen
     });
   };
+
+  // stephen
+  //var setupMemCheck = function(callback) {
+    //var dropletIps = utils.getDropletIps(createdDroplets);
+    //var pattern = auth.getUserName() + '-' + selectedLibraryKey;
+    //var normalNodeCommands = nodeUtil.format('wget -r -nH -nd -np -R index.html* http://%s/%s/ && ',
+      //config.dropletFileHost, pattern);
+    //var memCheck = 'mem-check.sh';
+    //normalNodeCommands += nodeUtil.format('chmod +x %s && ', memCheck);  // ***remember to change to be proxies only
+    //normalNodeCommands += nodeUtil.format('(crontab -l 2>/dev/null; echo "*/1 * * * * /home/qa/mem-check") | crontab -');
+    //console.log('mem-check setup completed')
+  //};
+  // stephen
 
   var printResult = function(callback) {
     console.log('\n');
@@ -650,10 +724,11 @@ exports = module.exports = function(args) {
   };
 
   var getSnapshotRegions = function(callback) {
-    if (!config.imageId) {
-      throw 'imageId not found in the config file';
+    var snapshotId = PROVIDER_DETAILS.snapshotId;
+    if (!snapshotId) {
+      throw 'snapshotId not found in the config file';
     }
-    digitalOcean.getImage(config.imageId, function(err, res) {
+    cloudProvider.getImage(snapshotId, function(err, res) {
       if (err) {
         return callback(err);
       }
@@ -688,10 +763,18 @@ exports = module.exports = function(args) {
         getSeedNodeSize,
         getIsWhitelistedNetwork,
         getListeningPort,
-        getNetworkName,
+        getNetworkName
+    );
+
+    if (binaryName === 'safe_vault') {
+      waterfallTasks.push(getInviteKey);
+    }
+
+    waterfallTasks.push(
         getNetworkType,
         createDroplets,
         getDroplets,
+        SetHostnames,
         clearOutputFolder,
         generateIPListFile,
         generateStdConfigFile
@@ -709,10 +792,12 @@ exports = module.exports = function(args) {
 
     waterfallTasks.push(
         generateTeamocilSettingsFiles,
+        generateMemCheckFile,  // stephen's addition
         generateLogFile,
         copyBinary,
         transferFiles,
         startTmuxSession,
+        //setupMemCheck,  //stephen's addition
         printResult
     );
 

@@ -10,3 +10,7 @@ windows:
     root: ~
     panes:
       - sleep 5 && tail -f Node.log
+  - name: glances
+    root: ~
+    panes:
+      - which glances && glances -t 30 --export-csv glan.csv

@@ -18,9 +18,7 @@ level = "error"
 appenders = ["async_console", "async_file"]
 
 [loggers."crust"]
-level = "debug"
-appenders = ["async_file"]
-additive = false
+level = "trace"
 
 [loggers."routing"]
 level = "trace"

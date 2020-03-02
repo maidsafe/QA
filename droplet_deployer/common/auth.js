@@ -62,6 +62,10 @@ var AuthManager = function() {
     return (config.hasOwnProperty(TOKEN_KEY) ? config : credentials)[TOKEN_KEY];
   };
 
+  this.getVultrToken = function() {
+    return credentials.vultrToken;
+  };
+
   this.getDropletUserPassword = function() {
     return (credentials.hasOwnProperty(PASSWORD_KEY) ? credentials : config)[PASSWORD_KEY];
   };
