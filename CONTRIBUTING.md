@@ -27,9 +27,9 @@ See our [Development Roadmap](https://safenetwork.tech/roadmap/) for more inform
 
 ## Issues and Feature Requests
 
-We are in the process of adding issue templates to each MaidSafe repository, with guidance and required information specific to that repository detailed within. Opening an issue in each repository will auto-populate your issue with this template.
+Each MaidSafe repository should have a `bug report` and a `feature request` template option when creating a new issue, with guidance and required information specific to that repository detailed within. Opening an issue in each repository will auto-populate your issue with this template.
 
-As per the issue template, issues should clearly lay out the problem, platform(s) experienced on, as well as steps to reproduce the issue. This aids in fixing the issue and validating that the issue has indeed been fixed if the reproduction steps are followed.
+As per the issue templates, bug reports should clearly lay out the problem, platform(s) experienced on, as well as steps to reproduce the issue. This aids in fixing the issue and validating that the issue has indeed been fixed if the reproduction steps are followed. Feature requests should clearly explain what any proposed new feature would include, resolve or offer.
 
 Each issue is labelled by the team depending on its type, typically the standard labels we use are:
 * `bug`: the issue is a bug in the product
