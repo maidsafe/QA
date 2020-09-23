@@ -1,15 +1,15 @@
 #!/bin/sh -l
 
-echo "Running new Safe Network section with $1 vault, $2 cli, and $3 authd"
+echo "Running new Safe Network section with $1 node, $2 cli, and $3 authd"
 echo ""
 
-# Download the specified vault version 
-wget "https://safe-vault.s3.eu-west-2.amazonaws.com/safe_vault-$1-x86_64-unknown-linux-musl.tar.gz" -O ./vault.tar.gz;
+# Download the specified node version 
+wget "https://sn-node.s3.eu-west-2.amazonaws.com/sn_node-$1-x86_64-unknown-linux-musl.tar.gz" -O ./node.tar.gz;
 
 ls .
-mkdir -p $HOME/.safe/vault
-tar -xvzf ./vault.tar.gz -C $HOME/.safe/vault/
-chmod +x $HOME/.safe/vault/safe_vault
+mkdir -p $HOME/.safe/node
+tar -xvzf ./node.tar.gz -C $HOME/.safe/node/
+chmod +x $HOME/.safe/node/sn_node
 
 # Download the specified cli version
 wget "https://sn_api.s3.eu-west-2.amazonaws.com/sn_cli-$2-x86_64-unknown-linux-gnu.tar.gz" -O ./safe.tar.gz;
@@ -43,8 +43,8 @@ echo $PATH
 
 # Check versions
 $HOME/.safe/authd/sn_authd -V
-$HOME/.safe/vault/safe_vault -V
+$HOME/.safe/node/sn_node -V
 safe --version
 
 # Start section
-safe vault run-baby-fleming
+safe node run-baby-fleming
