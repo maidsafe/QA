@@ -1,6 +1,6 @@
 #!/bin/sh -l
 
-echo "Running new Safe Network section with $1 node, $2 cli, and $3 authd"
+echo "Running new Safe Network section with $1 node, $2 cli, and $3 authd, with $4 seconds delay before any tests start"
 echo ""
 
 # Download the specified node version 
@@ -47,4 +47,4 @@ $HOME/.safe/node/sn_node -V
 safe --version
 
 # Start section
-safe node run-baby-fleming
+safe node run-baby-fleming -i $4
