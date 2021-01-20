@@ -12,7 +12,7 @@ tar -xvzf ./node.tar.gz -C $HOME/.safe/node/
 chmod +x $HOME/.safe/node/sn_node
 
 # Download the specified cli version
-wget "https://sn-api.s3.eu-west-2.amazonaws.com/sn_cli-$2-x86_64-unknown-linux-gnu.tar.gz" -O ./safe.tar.gz;
+wget "https://sn-api.s3.eu-west-2.amazonaws.com/sn_cli-$2-x86_64-unknown-linux-musl.tar.gz" -O ./safe.tar.gz;
 
 ls .
 mkdir -p $HOME/.safe/cli
@@ -27,7 +27,7 @@ echo "PATH:"
 echo $PATH
 
 # Download the specified authd version
-wget "https://sn-api.s3.eu-west-2.amazonaws.com/sn_authd-$3-x86_64-unknown-linux-gnu.tar.gz" -O ./sn_authd.tar.gz; 
+wget "https://sn-api.s3.eu-west-2.amazonaws.com/sn_authd-$3-x86_64-unknown-linux-musl.tar.gz" -O ./sn_authd.tar.gz; 
 
 ls .
 mkdir -p $HOME/.safe/authd
