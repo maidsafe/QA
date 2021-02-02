@@ -1,8 +1,8 @@
-# Contributing to the SAFE Network
+# Contributing to the Safe Network
 
-:tada: Thank you for your interest in contributing to the SAFE Network! :tada:
+:tada: Thank you for your interest in contributing to the Safe Network! :tada:
 
-This document is a set of guidelines for contributing to the SAFE Network. These are guidelines, not rules. This guide is designed to make it easy for you to get involved.
+This document is a set of guidelines for contributing to the Safe Network. These are guidelines, not rules. This guide is designed to make it easy for you to get involved.
 
 Notice something amiss? Have an idea for a new feature? Feel free to create an issue in this GitHub repository about anything that you feel could be fixed or improved. Examples include:
 - Bugs, crashes
@@ -21,7 +21,7 @@ This project adheres to the [Contributor Covenant](https://www.contributor-coven
 
 ## What we're working on
 
-The best way to follow our progress is to read the [MaidSafe Dev Updates](https://safenetforum.org/c/development/updates), which are published every week (on Thursdays) on the [SAFE Network Forum](https://safenetforum.org/).
+The best way to follow our progress is to read the [MaidSafe Dev Updates](https://safenetforum.org/c/development/updates), which are published every week (on Thursdays) on the [Safe Network Forum](https://safenetforum.org/).
 
 See our [Development Roadmap](https://safenetwork.tech/roadmap/) for more information on our near term development focus and longer term plans.
 
@@ -74,6 +74,8 @@ We are in the process of adding pull request templates to each MaidSafe reposito
 
 Pull requests should strive to tackle one issue/feature, and code should be pre-linted before commit.
 
+Each pull request's total lines changed should be <= 200 lines. This is calculated as `lines added` + `lines deleted`. Please split up any PRs which are larger than this, otherwise they may be rejected. A CI check has been added to fail PRs which are larger than 200 lines changed.
+
 Ideally, a multi-commit PR should be a sequence of commits "telling a story", going in atomic and easily reviewable steps from the initial to the final state.
 
 Each PR should be rebased on the latest upstream commit; avoid merging from the upstream branch into the feature branch/PR. This means that a PR will probably see one or more force-pushes to keep up to date with changes in the upstream branch.
@@ -114,9 +116,11 @@ The project board columns would typically include automation to move the issues 
 
 ## Releases and Changelog
 
-The release process is triggered by the maintainers of each repository, with versioning increments according to the [Semantic Versioning specification](https://semver.org/). Releases are typically generated through our CI setup, which releases upon a trigger commit title (e.g. `Version change...`), or through specific programming language release tools such as `cargo release` or `yarn bump`.
+The majority of our repositories have a Continuous Integration, Delivery & Deployment pipeline in place (CI/CD). Any PR raised must pass the automated CI tests and a peer review from a member of the team before being merged. Once merged there is no further manual involvement - the CD process kicks in and automatically increments the versioning according to the [Semantic Versioning specification](https://semver.org/), updates the Changelog, and deploys the latest code as appropriate for that repository. Every PR merged to master will result in a new release.
 
-Typically, we only update/regenerate the [CHANGELOG file](CHANGELOG.md) with the latest changes on a new version release, where all changes since the last release are then added to the changelog file.
+In repositories where CD has not been implemented yet, the release process is triggered by the maintainers of each repository, also with versioning increments according to the [Semantic Versioning specification](https://semver.org/). Releases are typically generated through our CI setup, which releases upon a trigger commit title (e.g. `Version change...`), or through specific programming language release tools such as `cargo release` or `yarn bump`.
+
+Typically, for non CD repositories we only update/regenerate the [CHANGELOG file](CHANGELOG.md) with the latest changes on a new version release, where all changes since the last release are then added to the changelog file.
 
 If a repository is for a library, or perhaps multiple libraries, then often no release artefact is produced. A tag would always be added to the repository on each release though, these tags can be viewed in the `/releases` page of each repository. Repositories which do produce artefacts, such as `.AppImage`, `.dmg` or `.exe` files, will have the release files available in the repository's `/release` page, or instructions there on how to obtain it.
 
@@ -124,6 +128,6 @@ If a repository is for a library, or perhaps multiple libraries, then often no r
 
 Contributors and users can get support through the following official channels:
 * GitHub issues: Log an issue in the repository where you require support.
-* [SAFE Network Forum](https://safenetforum.org/): Join our community forum, say hi, and discuss your support needs and questions with likeminded people.
-* [SAFE Dev Forum](https://forum.safedev.org/): Need to get technical with other developers? Join our developer forum and post your thoughts and questions.
-* [SAFE Network chat rooms](https://safenetforum.org/t/safe-network-chat-rooms/26070): The General chat room is a good place to ask for help. There is also a Development chat room for more technical discussion.
+* [Safe Network Forum](https://safenetforum.org/): Join our community forum, say hi, and discuss your support needs and questions with likeminded people.
+* [Safe Dev Forum](https://forum.safedev.org/): Need to get technical with other developers? Join our developer forum and post your thoughts and questions.
+* [Safe Network chat rooms](https://safenetforum.org/t/safe-network-chat-rooms/26070): The General chat room is a good place to ask for help. There is also a Development chat room for more technical discussion.
