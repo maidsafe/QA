@@ -79,6 +79,7 @@ allow = [
     "BSL-1.0",
     "CC0-1.0",
     "ISC",
+    "Unicode-DFS-2016",
     "Zlib"
 ]
 # List of explictly disallowed licenses
